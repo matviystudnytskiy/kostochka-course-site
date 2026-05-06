@@ -27,7 +27,7 @@ const modules = [
     number: "04",
     title: "Монтаж у CapCut",
     description:
-      "Секрети динаміки: як вирізати паузи, робити вкиди та утримувати увагу звуковими акцентами.",
+      "Секрети динаміки: як вирізати паузи, робити «вкиди» та утримувати увагу звуковими акцентами.",
   },
   {
     number: "05",
@@ -45,13 +45,13 @@ const modules = [
     number: "07",
     title: "TikTok для бізнесу: продажі",
     description:
-      "Як продавати свої товари без прямого впарювання і вітрини.",
+      "Як продавати свої товари без прямого «впарювання» і вітрини.",
   },
   {
     number: "08",
     title: "Особистий бренд",
     description:
-      "Як знайти свій якір і чому люди будуть купувати саме у тебе.",
+      "Як знайти свій «якір» і чому люди будуть купувати саме у тебе.",
   },
   {
     number: "09",
@@ -88,7 +88,9 @@ const packages = [
     name: "БАЗА",
     label: "Самостійний",
     price: "1499 грн",
-    subtitle: "Ідеально для тих, хто має дисципліну та звик рухатися у своєму темпі.",
+    amount: 1499,
+    subtitle:
+      "Ідеально для тих, хто має залізну дисципліну та звик рухатися у своєму темпі.",
     button: "Обрати тариф «База»",
     features: [
       "Доступ до всіх 11 практичних модулів",
@@ -96,14 +98,16 @@ const packages = [
       "Домашні завдання після кожного уроку для самостійного виконання",
       "Доступ до матеріалів назавжди",
     ],
-    highlighted: false,
+    recommended: false,
   },
   {
     id: "pro",
     name: "PRO",
     label: "З моєю підтримкою",
     price: "3499 грн",
-    subtitle: "Для тих, хто хоче максимальний результат, особистий фідбек та сильне оточення.",
+    amount: 3499,
+    subtitle:
+      "Для тих, хто хоче максимальний результат, особистий фідбек та сильне оточення.",
     button: "Обрати тариф «PRO»",
     features: [
       "Усі матеріали тарифу «База»",
@@ -113,7 +117,7 @@ const packages = [
       "Додаткові фішки, інсайди та розбори поза основною програмою",
       "Іменний сертифікат PRO Content Creation Academy після виконання практичних завдань",
     ],
-    highlighted: true,
+    recommended: true,
   },
 ];
 
@@ -129,6 +133,11 @@ const faqs = [
       "Ні. Курс побудований так, щоб ти міг стартувати навіть із маленькою аудиторією: зрозуміти свою подачу, створити систему контенту й поступово перетворювати увагу в довіру та заявки.",
   },
   {
+    question: "Скільки потрібно часу на навчання?",
+    answer:
+      "Достатньо виділяти декілька годин на день: подивитися урок, виконати домашнє завдання, проаналізувати помилки й одразу застосувати матеріал на своєму контенті. Головне — не просто дивитися, а робити.",
+  },
+  {
     question: "Де будуть уроки?",
     answer:
       "Уроки будуть у закритому Telegram-каналі. Після успішної оплати ти отримаєш доступ відповідно до обраного тарифу.",
@@ -141,16 +150,8 @@ const faqs = [
   {
     question: "Що робити, якщо виникли проблеми з оплатою або доступом?",
     answer:
-      "Якщо виникли проблеми або запитання, звертайся за номером: +380 50 234 61 48.",
+      "Якщо виникли проблеми або запитання: +380 50 234 61 48.",
   },
-];
-
-const prototypeTests = [
-  { name: "course has exactly eleven modules", pass: modules.length === 11 },
-  { name: "there are exactly two tariffs", pass: packages.length === 2 },
-  { name: "base tariff price is defined", pass: packages.find((item) => item.id === "base")?.price === "1499 грн" },
-  { name: "pro tariff price is defined", pass: packages.find((item) => item.id === "pro")?.price === "3499 грн" },
-  { name: "FAQ contains support contact", pass: faqs.some((item) => item.answer.includes("+380 50 234 61 48")) },
 ];
 
 export default function CourseLandingPrototype() {
@@ -158,13 +159,67 @@ export default function CourseLandingPrototype() {
   const [activePackage, setActivePackage] = useState("pro");
   const [openFaq, setOpenFaq] = useState(0);
   const [imageErrors, setImageErrors] = useState({ logo: false, photo: false });
+  const [formStatus, setFormStatus] = useState({ loading: false, error: "" });
 
   const selectedPackage = useMemo(
     () => packages.find((item) => item.id === activePackage) ?? packages[1],
     [activePackage]
   );
 
-  const testsPassed = prototypeTests.every((test) => test.pass);
+  const handlePackageSelect = (packageId) => {
+    setActivePackage(packageId);
+    window.setTimeout(() => {
+      document.getElementById("apply")?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setFormStatus({ loading: true, error: "" });
+
+    const formData = new FormData(event.currentTarget);
+    const payload = {
+      name: String(formData.get("name") || "").trim(),
+      phone: String(formData.get("phone") || "").trim(),
+      telegram: String(formData.get("telegram") || "").trim(),
+      email: String(formData.get("email") || "").trim(),
+      packageId: selectedPackage.id,
+      packageName: selectedPackage.name,
+      amount: selectedPackage.amount,
+      currency: "UAH",
+      source: "kostochka.pro",
+    };
+
+    try {
+      const response = await fetch("/.netlify/functions/create-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Не вдалося створити платіж.");
+      }
+
+      const paymentUrl = data?.paymentUrl || data?.checkoutUrl || data?.url;
+
+      if (!paymentUrl) {
+        throw new Error("Платіж створено, але посилання на оплату не отримано.");
+      }
+
+      window.location.href = paymentUrl;
+    } catch (error) {
+      setFormStatus({
+        loading: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Не вдалося перейти до оплати. Спробуй ще раз або звернись за номером +380 50 234 61 48.",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#070707] text-white selection:bg-white selection:text-black">
@@ -173,19 +228,33 @@ export default function CourseLandingPrototype() {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070707]/82 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
           <a href="#top" className="flex items-center gap-3">
-            <LogoMark hasError={imageErrors.logo} onError={() => setImageErrors((value) => ({ ...value, logo: true }))} />
+            <LogoMark
+              hasError={imageErrors.logo}
+              onError={() => setImageErrors((value) => ({ ...value, logo: true }))}
+            />
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.24em]">AK Content</p>
-              <p className="text-xs text-zinc-400">PRO Content Creation Academy</p>
+              <p className="text-sm font-black uppercase tracking-[0.18em]">ТІКТОК НА МІЛЬЙОН</p>
+              <p className="text-xs text-zinc-400">Мінікурс Артема Косточки</p>
             </div>
           </a>
 
           <div className="hidden items-center gap-7 text-sm text-zinc-300 md:flex">
-            <a className="transition hover:text-white" href="#about">Про автора</a>
-            <a className="transition hover:text-white" href="#program">Програма</a>
-            <a className="transition hover:text-white" href="#price">Тарифи</a>
-            <a className="transition hover:text-white" href="#faq">FAQ</a>
-            <a className="rounded-full bg-white px-5 py-2.5 font-semibold text-black transition hover:bg-zinc-200" href="#apply">
+            <a className="transition hover:text-white" href="#about">
+              Про автора
+            </a>
+            <a className="transition hover:text-white" href="#program">
+              Програма
+            </a>
+            <a className="transition hover:text-white" href="#price">
+              Тарифи
+            </a>
+            <a className="transition hover:text-white" href="#faq">
+              FAQ
+            </a>
+            <a
+              className="rounded-full bg-white px-5 py-2.5 font-semibold text-black transition hover:bg-zinc-200"
+              href="#apply"
+            >
               Залишити заявку
             </a>
           </div>
@@ -194,7 +263,7 @@ export default function CourseLandingPrototype() {
             type="button"
             onClick={() => setMenuOpen((value) => !value)}
             className="rounded-xl border border-white/10 p-2 md:hidden"
-            aria-label="Open menu"
+            aria-label="Відкрити меню"
           >
             {menuOpen ? <Icon name="x" size={20} /> : <Icon name="menu" size={20} />}
           </button>
@@ -240,7 +309,7 @@ export default function CourseLandingPrototype() {
             className="flex flex-col justify-center"
           >
             <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm text-zinc-300">
-              <Icon name="sparkles" size={16} /> TikTok, Instagram і Telegram для результату, а не просто для постингу
+              <Icon name="sparkles" size={16} /> TikTok-контент для переглядів, заявок і впізнаваності
             </div>
 
             <h1 className="max-w-5xl text-5xl font-black leading-[0.92] tracking-tight md:text-7xl">
@@ -273,7 +342,7 @@ export default function CourseLandingPrototype() {
             </div>
 
             <p className="mt-5 text-sm text-zinc-500">
-              Після оплати доступ відкривається через закритий Telegram-канал відповідно до обраного тарифу.
+              Після оплати ми зв’яжемось з тобою у Telegram протягом декількох хвилин.
             </p>
           </motion.div>
 
@@ -311,7 +380,11 @@ export default function CourseLandingPrototype() {
               <div className="overflow-hidden rounded-[1.7rem] border border-white/10 bg-[#111114]">
                 <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
                   <div className="flex items-center gap-3">
-                    <LogoMark small hasError={imageErrors.logo} onError={() => setImageErrors((value) => ({ ...value, logo: true }))} />
+                    <LogoMark
+                      small
+                      hasError={imageErrors.logo}
+                      onError={() => setImageErrors((value) => ({ ...value, logo: true }))}
+                    />
                     <div>
                       <p className="font-bold">Артем Косточка</p>
                       <p className="text-xs text-zinc-500">creator · content strategy</p>
@@ -338,7 +411,7 @@ export default function CourseLandingPrototype() {
                       </div>
                     )}
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-5">
-                      <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">PRO Content Creation Academy</p>
+                      <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Мінікурс «ТІКТОК НА МІЛЬЙОН»</p>
                       <p className="mt-2 text-2xl font-black leading-tight">Контент, який утримує увагу і приводить людей.</p>
                     </div>
                   </div>
@@ -440,7 +513,7 @@ export default function CourseLandingPrototype() {
             <p className="text-sm font-bold uppercase tracking-[0.28em] text-zinc-500">Програма курсу</p>
             <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">11 кроків до твого результату. Без води.</h2>
             <p className="mt-5 leading-8 text-zinc-300">
-              Кожен модуль побудований навколо практики: подивився урок, виконав завдання, застосував на своєму контенті.
+              На старті є вступний урок, а далі — 11 практичних модулів із домашніми завданнями. Кожен модуль побудований навколо практики: подивився урок, виконав завдання, застосував на своєму контенті.
             </p>
           </div>
 
@@ -474,47 +547,62 @@ export default function CourseLandingPrototype() {
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            {packages.map((pack) => (
-              <button
-                key={pack.id}
-                type="button"
-                onClick={() => setActivePackage(pack.id)}
-                className={`rounded-[1.7rem] border p-6 text-left transition ${
-                  pack.highlighted
-                    ? "border-white bg-white text-black shadow-2xl shadow-white/10"
-                    : activePackage === pack.id
-                    ? "border-white/40 bg-white/[0.08] text-white"
-                    : "border-white/10 bg-white/[0.04] text-white hover:border-white/25 hover:bg-white/[0.07]"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-black uppercase tracking-[0.22em] opacity-60">{pack.label}</p>
-                    <p className="mt-2 text-4xl font-black">{pack.name}</p>
-                    <p className={`mt-3 text-sm leading-6 ${pack.highlighted ? "text-zinc-600" : "text-zinc-400"}`}>{pack.subtitle}</p>
-                  </div>
-                  {pack.highlighted && (
-                    <span className="rounded-full bg-black px-3 py-1 text-xs font-black uppercase tracking-wide text-white">рекомендовано</span>
-                  )}
-                </div>
-                <p className="mt-7 text-5xl font-black tracking-tight">{pack.price}</p>
-                <div className="mt-6 grid gap-3">
-                  {pack.features.map((feature) => (
-                    <div key={feature} className={`flex gap-3 text-sm leading-6 ${pack.highlighted ? "text-zinc-700" : "text-zinc-300"}`}>
-                      <Icon name="check" size={17} className="mt-1 shrink-0" />
-                      {feature}
+            {packages.map((pack) => {
+              const isActive = activePackage === pack.id;
+
+              return (
+                <button
+                  key={pack.id}
+                  type="button"
+                  onClick={() => handlePackageSelect(pack.id)}
+                  className={`rounded-[1.7rem] border p-6 text-left transition ${
+                    isActive
+                      ? "border-white bg-white text-black shadow-2xl shadow-white/10"
+                      : pack.recommended
+                      ? "border-white/35 bg-white/[0.08] text-white hover:border-white/55 hover:bg-white/[0.11]"
+                      : "border-white/10 bg-white/[0.04] text-white hover:border-white/25 hover:bg-white/[0.07]"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className={`text-sm font-black uppercase tracking-[0.22em] ${isActive ? "text-zinc-500" : "text-zinc-500"}`}>
+                        {pack.label}
+                      </p>
+                      <p className="mt-2 text-4xl font-black">{pack.name}</p>
+                      <p className={`mt-3 text-sm leading-6 ${isActive ? "text-zinc-600" : "text-zinc-400"}`}>{pack.subtitle}</p>
                     </div>
-                  ))}
-                </div>
-                <div className={`mt-7 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black ${pack.highlighted ? "bg-black text-white" : "bg-white text-black"}`}>
-                  {pack.button} <Icon name="arrowRight" size={16} />
-                </div>
-              </button>
-            ))}
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      {pack.recommended && (
+                        <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${isActive ? "bg-black text-white" : "bg-white text-black"}`}>
+                          рекомендовано
+                        </span>
+                      )}
+                      {isActive && (
+                        <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
+                          обрано
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="mt-7 text-5xl font-black tracking-tight">{pack.price}</p>
+                  <div className="mt-6 grid gap-3">
+                    {pack.features.map((feature) => (
+                      <div key={feature} className={`flex gap-3 text-sm leading-6 ${isActive ? "text-zinc-700" : "text-zinc-300"}`}>
+                        <Icon name="check" size={17} className="mt-1 shrink-0" />
+                        {feature}
+                      </div>
+                    ))}
+                  </div>
+                  <div className={`mt-7 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black ${isActive ? "bg-black text-white" : "bg-white text-black"}`}>
+                    {pack.button} <Icon name="arrowRight" size={16} />
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 text-sm leading-7 text-zinc-300">
-            Обраний тариф: <span className="font-bold text-white">{selectedPackage.name}</span>. У фінальній версії кнопка оплати вестиме на WayForPay, а після підтвердження оплати покупець отримає Telegram-доступ.
+            Обраний тариф: <span className="font-bold text-white">{selectedPackage.name}</span>. Після оплати ми зв’яжемось з тобою у Telegram протягом декількох хвилин.
           </div>
         </section>
 
@@ -537,11 +625,7 @@ export default function CourseLandingPrototype() {
                 </button>
                 <AnimatePresence initial={false}>
                   {openFaq === index && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                    >
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
                       <p className="border-t border-white/10 px-5 py-5 leading-8 text-zinc-400">{faq.answer}</p>
                     </motion.div>
                   )}
@@ -558,7 +642,7 @@ export default function CourseLandingPrototype() {
                 <p className="text-sm font-black uppercase tracking-[0.28em] text-zinc-500">Запис на курс</p>
                 <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Залиш дані — і переходь до оплати.</h2>
                 <p className="mt-5 max-w-2xl leading-8 text-zinc-700">
-                  У фінальній версії після успішної оплати через WayForPay покупець буде записаний у Google Sheets, а доступ у Telegram буде видано відповідно до тарифу.
+                  Після оплати ми перевіримо заявку та надішлемо доступ у Telegram відповідно до обраного тарифу.
                 </p>
                 <div className="mt-7 flex flex-wrap gap-3 text-sm text-zinc-600">
                   <Badge icon={<Icon name="clock" size={16} />} text="Доступ після оплати" />
@@ -566,65 +650,110 @@ export default function CourseLandingPrototype() {
                   <Badge icon={<Icon name="message" size={16} />} text="Закритий Telegram" />
                 </div>
                 <p className="mt-7 text-sm leading-7 text-zinc-600">
-                  Якщо виникли проблеми або запитання щодо оплати чи доступу до курсу: <span className="font-black text-black">+380 50 234 61 48</span>
+                  Якщо виникли проблеми або запитання: <span className="font-black text-black">+380 50 234 61 48</span>
                 </p>
               </div>
 
-              <form className="rounded-[1.7rem] bg-zinc-100 p-4">
+              <form onSubmit={handleSubmit} className="rounded-[1.7rem] bg-zinc-100 p-4">
                 <div className="grid gap-3">
-                  <input className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500" placeholder="Ім’я *" required />
-                  <input className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500" placeholder="Телефон *" required />
-                  <input className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500" placeholder="Telegram username *" required />
-                  <input className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500" placeholder="Email *" type="email" required />
+                  <input
+                    name="name"
+                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
+                    placeholder="Ім’я *"
+                    autoComplete="name"
+                    required
+                  />
+                  <input
+                    name="phone"
+                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
+                    placeholder="Телефон *"
+                    type="tel"
+                    autoComplete="tel"
+                    required
+                  />
+                  <input
+                    name="telegram"
+                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
+                    placeholder="Telegram username *"
+                    autoComplete="off"
+                    required
+                  />
+                  <input
+                    name="email"
+                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
+                    placeholder="Email *"
+                    type="email"
+                    autoComplete="email"
+                    required
+                  />
                   <select
+                    name="tariff"
                     className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
                     value={activePackage}
                     onChange={(event) => setActivePackage(event.target.value)}
                   >
                     {packages.map((pack) => (
-                      <option key={pack.id} value={pack.id}>{pack.name} — {pack.price}</option>
+                      <option key={pack.id} value={pack.id}>
+                        {pack.name} — {pack.price}
+                      </option>
                     ))}
                   </select>
-                  <button type="button" className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-6 py-4 font-black text-white transition hover:bg-zinc-800">
-                    Перейти до оплати <Icon name="arrowRight" className="transition group-hover:translate-x-1" size={18} />
+
+                  <label className="flex gap-3 px-1 text-xs leading-5 text-zinc-500">
+                    <input type="checkbox" required className="mt-1 h-4 w-4 shrink-0 accent-black" />
+                    <span>
+                      Погоджуюсь з умовами доступу до курсу та обробкою моїх контактних даних для зв’язку щодо навчання.
+                    </span>
+                  </label>
+
+                  {formStatus.error && (
+                    <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+                      {formStatus.error}
+                    </p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={formStatus.loading}
+                    className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-6 py-4 font-black text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-500"
+                  >
+                    {formStatus.loading ? "Створюємо оплату..." : "Перейти до оплати"}
+                    {!formStatus.loading && <Icon name="arrowRight" className="transition group-hover:translate-x-1" size={18} />}
                   </button>
+
                   <p className="px-1 text-xs leading-5 text-zinc-500">
-                    Це демо-форма. У фінальній версії вона буде підключена до WayForPay, Google Sheets і Telegram-доступу.
+                    Обраний тариф: <span className="font-black text-black">{selectedPackage.name}</span>, сума до оплати: <span className="font-black text-black">{selectedPackage.price}</span>.
                   </p>
                 </div>
               </form>
             </div>
           </div>
         </section>
-
-        <section aria-label="Prototype checks" className="mx-auto max-w-7xl px-5 pb-12 lg:px-8">
-          <details className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-zinc-400">
-            <summary className="cursor-pointer font-bold text-zinc-300">
-              Prototype checks: {testsPassed ? "passed" : "needs attention"}
-            </summary>
-            <div className="mt-4 grid gap-2">
-              {prototypeTests.map((test) => (
-                <div key={test.name} className="flex items-center gap-2">
-                  <span className={test.pass ? "text-emerald-400" : "text-red-400"}>{test.pass ? "✓" : "×"}</span>
-                  <span>{test.name}</span>
-                </div>
-              ))}
-            </div>
-          </details>
-        </section>
       </main>
 
       <footer className="relative z-10 border-t border-white/10 px-5 py-8 lg:px-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-zinc-500 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <LogoMark small hasError={imageErrors.logo} onError={() => setImageErrors((value) => ({ ...value, logo: true }))} />
-            <p>AK Content © 2026. PRO Content Creation Academy.</p>
+            <LogoMark
+              small
+              hasError={imageErrors.logo}
+              onError={() => setImageErrors((value) => ({ ...value, logo: true }))}
+            />
+            <p>ТІКТОК НА МІЛЬЙОН © 2026. Мінікурс Артема Косточки.</p>
           </div>
           <div className="flex gap-5">
-            <a href="#about" className="transition hover:text-white">Автор</a>
-            <a href="#program" className="transition hover:text-white">Програма</a>
-            <a href="#price" className="transition hover:text-white">Тарифи</a>
-            <a href="#apply" className="transition hover:text-white">Оплата</a>
+            <a href="#about" className="transition hover:text-white">
+              Автор
+            </a>
+            <a href="#program" className="transition hover:text-white">
+              Програма
+            </a>
+            <a href="#price" className="transition hover:text-white">
+              Тарифи
+            </a>
+            <a href="#apply" className="transition hover:text-white">
+              Оплата
+            </a>
           </div>
         </div>
       </footer>
@@ -638,7 +767,7 @@ function LogoMark({ small = false, hasError, onError }) {
   if (!hasError) {
     return (
       <div className={`grid ${size} shrink-0 place-items-center overflow-hidden rounded-2xl bg-white shadow-lg shadow-white/10`}>
-        <img src={LOGO_SRC} alt="AK Content logo" className="h-full w-full object-cover" onError={onError} />
+        <img src={LOGO_SRC} alt="Логотип курсу" className="h-full w-full object-cover" onError={onError} />
       </div>
     );
   }
