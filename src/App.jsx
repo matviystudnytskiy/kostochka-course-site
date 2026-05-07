@@ -4,6 +4,38 @@ import { motion, AnimatePresence } from "framer-motion";
 const LOGO_SRC = "/kostochka-logo.jpg";
 const PHOTO_SRC = "/kostochka-photo.jpg";
 
+const pagePaths = {
+  about: "/",
+  program: "/program",
+  offer: "/offer",
+  refund: "/refund",
+  privacy: "/privacy",
+  contacts: "/contacts",
+};
+
+const pageTitles = {
+  about: "Артем Косточка - TikTok Creator",
+  program: "Програма - Артем Косточка",
+  offer: "Публічна оферта - Артем Косточка",
+  refund: "Політика повернення - Артем Косточка",
+  privacy: "Політика конфіденційності - Артем Косточка",
+  contacts: "Контакти - Артем Косточка",
+};
+
+function getPageFromPath() {
+  if (typeof window === "undefined") return "about";
+
+  const path = window.location.pathname.replace(/\/$/, "") || "/";
+
+  if (path === "/program") return "program";
+  if (path === "/offer") return "offer";
+  if (path === "/refund") return "refund";
+  if (path === "/privacy") return "privacy";
+  if (path === "/contacts") return "contacts";
+
+  return "about";
+}
+
 const modules = [
   {
     number: "01",
@@ -154,11 +186,16 @@ const faqs = [
   },
 ];
 
+const seller = {
+  name: "ФОП Кость Артем Сергійович",
+  taxId: "3795301399",
+  address: "Україна, м. Луцьк, вул. Стрілецька 6а",
+  email: "kostartemko@gmail.com",
+  phone: "+380 50 234 61 48",
+};
+
 export default function CourseLandingSite() {
-  const [activePage, setActivePage] = useState(() => {
-    if (typeof window === "undefined") return "about";
-    return window.location.pathname.replace(/\/$/, "") === "/program" ? "program" : "about";
-  });
+  const [activePage, setActivePage] = useState(() => getPageFromPath());
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePackage, setActivePackage] = useState("pro");
   const [openFaq, setOpenFaq] = useState(0);
@@ -171,16 +208,11 @@ export default function CourseLandingSite() {
   );
 
   useEffect(() => {
-    document.title = activePage === "about"
-      ? "Артем Косточка - TikTok Creator"
-      : "Програма - Артем Косточка";
+    document.title = pageTitles[activePage] ?? pageTitles.about;
   }, [activePage]);
 
   useEffect(() => {
-    const handlePopState = () => {
-      const nextPage = window.location.pathname.replace(/\/$/, "") === "/program" ? "program" : "about";
-      setActivePage(nextPage);
-    };
+    const handlePopState = () => setActivePage(getPageFromPath());
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -196,7 +228,7 @@ export default function CourseLandingSite() {
   }, [activePage]);
 
   const navigateTo = (page, targetId = null) => {
-    const nextPath = page === "program" ? "/program" : "/";
+    const nextPath = pagePaths[page] ?? "/";
     const currentPath = `${window.location.pathname}${window.location.hash}`;
     const nextUrl = targetId ? `${nextPath}#${targetId}` : nextPath;
 
@@ -298,27 +330,15 @@ export default function CourseLandingSite() {
 
       <main className="relative z-10">
         <AnimatePresence mode="wait">
-          {activePage === "about" ? (
-            <motion.div
-              key="about-page"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.28 }}
-            >
-              <AboutPage {...sharedProps} />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="program-page"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.28 }}
-            >
-              <ProgramPage {...sharedProps} />
-            </motion.div>
-          )}
+          <motion.div
+            key={activePage}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.28 }}
+          >
+            <PageRenderer activePage={activePage} sharedProps={sharedProps} />
+          </motion.div>
         </AnimatePresence>
       </main>
 
@@ -329,7 +349,18 @@ export default function CourseLandingSite() {
   );
 }
 
+function PageRenderer({ activePage, sharedProps }) {
+  if (activePage === "program") return <ProgramPage {...sharedProps} />;
+  if (activePage === "offer") return <OfferPage />;
+  if (activePage === "refund") return <RefundPage />;
+  if (activePage === "privacy") return <PrivacyPage />;
+  if (activePage === "contacts") return <ContactsPage />;
+  return <AboutPage {...sharedProps} />;
+}
+
 function Header({ activePage, menuOpen, setMenuOpen, imageErrors, setImageErrors, navigateTo }) {
+  const isLegalPage = ["offer", "refund", "privacy", "contacts"].includes(activePage);
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070707]/88 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
@@ -347,6 +378,7 @@ function Header({ activePage, menuOpen, setMenuOpen, imageErrors, setImageErrors
         <div className="hidden items-center gap-3 text-sm text-zinc-300 md:flex">
           <NavButton active={activePage === "about"} onClick={() => navigateTo("about")}>Про мене</NavButton>
           <NavButton active={activePage === "program"} onClick={() => navigateTo("program")}>Програма</NavButton>
+          {isLegalPage && <NavButton active={isLegalPage} onClick={() => navigateTo(activePage)}>Документи</NavButton>}
           <button
             type="button"
             onClick={() => navigateTo("program", "apply")}
@@ -375,15 +407,14 @@ function Header({ activePage, menuOpen, setMenuOpen, imageErrors, setImageErrors
             className="overflow-hidden border-t border-white/10 bg-[#070707] md:hidden"
           >
             <div className="grid gap-1 px-5 py-4 text-sm text-zinc-300">
-              <button type="button" onClick={() => navigateTo("about")} className="rounded-xl px-3 py-3 text-left transition hover:bg-white/10">
-                Про мене
-              </button>
-              <button type="button" onClick={() => navigateTo("program")} className="rounded-xl px-3 py-3 text-left transition hover:bg-white/10">
-                Програма
-              </button>
-              <button type="button" onClick={() => navigateTo("program", "apply")} className="rounded-xl px-3 py-3 text-left transition hover:bg-white/10">
-                Залишити заявку
-              </button>
+              <MobileMenuButton onClick={() => navigateTo("about")}>Про мене</MobileMenuButton>
+              <MobileMenuButton onClick={() => navigateTo("program")}>Програма</MobileMenuButton>
+              <MobileMenuButton onClick={() => navigateTo("program", "apply")}>Залишити заявку</MobileMenuButton>
+              <div className="my-2 h-px bg-white/10" />
+              <MobileMenuButton onClick={() => navigateTo("offer")}>Публічна оферта</MobileMenuButton>
+              <MobileMenuButton onClick={() => navigateTo("refund")}>Політика повернення</MobileMenuButton>
+              <MobileMenuButton onClick={() => navigateTo("privacy")}>Конфіденційність</MobileMenuButton>
+              <MobileMenuButton onClick={() => navigateTo("contacts")}>Контакти</MobileMenuButton>
             </div>
           </motion.div>
         )}
@@ -401,6 +432,14 @@ function NavButton({ active, onClick, children }) {
         active ? "bg-white text-black" : "text-zinc-300 hover:bg-white/10 hover:text-white"
       }`}
     >
+      {children}
+    </button>
+  );
+}
+
+function MobileMenuButton({ onClick, children }) {
+  return (
+    <button type="button" onClick={onClick} className="rounded-xl px-3 py-3 text-left transition hover:bg-white/10">
       {children}
     </button>
   );
@@ -490,6 +529,7 @@ function ProgramPage({
   setImageErrors,
   handlePackageSelect,
   handleSubmit,
+  navigateTo,
 }) {
   return (
     <>
@@ -861,7 +901,19 @@ function ProgramPage({
                 <label className="flex gap-3 px-1 text-xs leading-5 text-zinc-500">
                   <input type="checkbox" required className="mt-1 h-4 w-4 shrink-0 accent-black" />
                   <span>
-                    Погоджуюсь з <a href="/offer" className="font-semibold text-black underline underline-offset-2">умовами доступу до курсу</a>, <a href="/privacy" className="font-semibold text-black underline underline-offset-2">політикою конфіденційності</a> та обробкою моїх контактних даних для зв’язку щодо навчання.
+                    Погоджуюсь з{" "}
+                    <button type="button" onClick={() => navigateTo("offer")} className="font-semibold text-black underline underline-offset-2">
+                      умовами публічної оферти
+                    </button>
+                    ,{" "}
+                    <button type="button" onClick={() => navigateTo("refund")} className="font-semibold text-black underline underline-offset-2">
+                      політикою повернення коштів
+                    </button>
+                    ,{" "}
+                    <button type="button" onClick={() => navigateTo("privacy")} className="font-semibold text-black underline underline-offset-2">
+                      політикою конфіденційності
+                    </button>{" "}
+                    та обробкою моїх контактних даних для зв’язку щодо навчання.
                   </span>
                 </label>
 
@@ -892,6 +944,204 @@ function ProgramPage({
   );
 }
 
+function LegalPage({ title, subtitle, children }) {
+  return (
+    <section className="mx-auto max-w-4xl px-5 py-14 lg:px-8 lg:py-20">
+      <div className="rounded-[2rem] border border-white/10 bg-white p-6 text-black shadow-2xl shadow-black/30 md:p-10">
+        <p className="text-sm font-black uppercase tracking-[0.24em] text-zinc-500">Документи</p>
+        <h1 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">{title}</h1>
+        {subtitle && <p className="mt-4 leading-7 text-zinc-600">{subtitle}</p>}
+        <div className="mt-8 space-y-7 leading-8 text-zinc-800">{children}</div>
+      </div>
+    </section>
+  );
+}
+
+function LegalSection({ title, children }) {
+  return (
+    <section>
+      <h2 className="text-xl font-black tracking-tight text-black">{title}</h2>
+      <div className="mt-3 space-y-3 text-zinc-700">{children}</div>
+    </section>
+  );
+}
+
+function OfferPage() {
+  return (
+    <LegalPage
+      title="Публічна оферта"
+      subtitle="Договір публічної оферти про надання інформаційних послуг."
+    >
+      <LegalSection title="1. Загальні положення">
+        <p>
+          1.1. Цей Договір є офіційною та публічною пропозицією (офертою) ФОП Кость Артем Сергійович (далі — Виконавець) для будь-якої фізичної або юридичної особи (далі — Замовник) укласти Договір на надання інформаційних послуг (доступу до онлайн-курсу) на умовах, що викладені нижче.
+        </p>
+        <p>
+          1.2. Відповідно до ст. 642 Цивільного Кодексу України, повним і безумовним прийняттям умов даної оферти (акцептом) вважається факт здійснення Замовником оплати послуг на сайті.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="2. Предмет договору">
+        <p>
+          2.1. Виконавець зобов’язується надати Замовнику інформаційні послуги у вигляді доступу до авторських навчальних матеріалів (відеоуроки, текстові матеріали, закриті спільноти тощо), а Замовник зобов’язується оплатити ці послуги.
+        </p>
+        <p>2.2. Назва, зміст та вартість конкретного курсу (тарифу) вказуються на сайті в момент замовлення.</p>
+      </LegalSection>
+
+      <LegalSection title="3. Порядок надання послуг">
+        <p>
+          3.1. Після повної оплати послуг через платіжну систему на сайті, Замовник автоматично або протягом 24 годин отримує доступ до матеріалів (посилання на платформу, канал або групу) на вказану ним електронну пошту або месенджер.
+        </p>
+        <p>
+          3.2. Доступ до матеріалів курсу надається Замовнику на необмежений термін (назавжди), якщо інше технічно не зумовлено роботою сторонніх сервісів (наприклад, Telegram чи хостингів).
+        </p>
+      </LegalSection>
+
+      <LegalSection title="4. Вартість та порядок розрахунків">
+        <p>4.1. Вартість послуг вказана на сайті та оплачується в національній валюті України (гривня).</p>
+        <p>4.2. Оплата здійснюється за допомогою платіжної системи WayForPay.</p>
+        <p>4.3. Послуга вважається наданою в повному обсязі з моменту надання доступу (відправки посилання) Замовнику.</p>
+      </LegalSection>
+
+      <LegalSection title="5. Права та обов’язки сторін. Захист авторських прав">
+        <p>5.1. Виконавець має право змінювати зміст курсу без попередження Замовника, не зменшуючи при цьому загальний обсяг послуг.</p>
+        <p>
+          5.2. Замовник зобов’язується використовувати навчальні матеріали виключно для особистих потреб. Будь-яке розповсюдження, копіювання, передача доступу третім особам, організація спільного доступу (складчин), а також перепродаж чи публікація матеріалів у відкритих джерелах суворо заборонені та є порушенням авторських прав Виконавця.
+        </p>
+        <p>
+          5.3. У разі виявлення фактів порушення Замовником п. 5.2 цього Договору (піратство, передача логінів/паролів, публікація матеріалів тощо), Виконавець має право в односторонньому порядку негайно та назавжди припинити надання послуг та заблокувати доступ Замовника до всіх матеріалів та спільнот курсу без повернення раніше сплачених коштів. Виконавець також залишає за собою право на захист своїх прав у судовому порядку.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="6. Порядок повернення коштів">
+        <p>
+          6.1. Оскільки доступ до цифрового контенту надається після оплати, кошти за надані послуги поверненню не підлягають згідно з Політикою повернення коштів, розміщеною на сайті.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="7. Реквізити Виконавця">
+        <SellerDetails />
+      </LegalSection>
+    </LegalPage>
+  );
+}
+
+function RefundPage() {
+  return (
+    <LegalPage
+      title="Політика повернення коштів"
+      subtitle="Умови скасування замовлення та повернення коштів за цифрові послуги."
+    >
+      <LegalSection title="1. Загальні положення">
+        <p>
+          Ця Політика визначає умови скасування замовлення та повернення коштів за цифрові послуги (доступ до онлайн-курсу), які надаються на цьому сайті.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="2. Надання цифрових послуг">
+        <p>
+          Послуга вважається наданою в повному обсязі в момент надання користувачеві доступу до навчальних матеріалів (надання посилання на закриту групу, канал або платформу з уроками) на електронну пошту або в месенджер після успішної оплати.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="3. Умови повернення">
+        <p>
+          Відповідно до Закону України «Про захист прав споживачів» та специфіки цифрових товарів, кошти за оплачений доступ до онлайн-курсу не повертаються.
+        </p>
+        <p>
+          Отримуючи доступ до цифрового контенту, покупець втрачає право на відмову від договору та повернення коштів, оскільки цифровий товар не підлягає фізичному поверненню.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="4. Виняткові ситуації">
+        <p>
+          Якщо ви здійснили оплату, але з технічних причин (збій системи, неправильно вказана електронна пошта або месенджер) не отримали доступ до матеріалів протягом 24 годин, будь ласка, зв’яжіться зі службою підтримки за контактами, вказаними на сайті. Ми оперативно вирішимо проблему та надамо доступ.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Контакти для звернень">
+        <SellerDetails />
+      </LegalSection>
+    </LegalPage>
+  );
+}
+
+function PrivacyPage() {
+  return (
+    <LegalPage
+      title="Політика конфіденційності"
+      subtitle="Як ми збираємо, використовуємо та захищаємо контактні дані користувачів сайту."
+    >
+      <LegalSection title="1. Які дані збираються">
+        <p>
+          Під час оформлення заявки на курс сайт може збирати такі контактні дані: ім’я, номер телефону, Telegram username, адресу електронної пошти, обраний тариф, дату та статус заявки або оплати.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="2. Для чого використовуються дані">
+        <p>
+          Дані використовуються для обробки заявки, проведення оплати, надання доступу до навчальних матеріалів, зв’язку з покупцем у Telegram або електронною поштою, технічної підтримки, підтвердження факту оплати та ведення обліку покупців.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="3. Передача даних третім сторонам">
+        <p>
+          Дані можуть оброблятися сервісами, необхідними для роботи сайту та надання послуг, зокрема платіжною системою WayForPay, хостингом Netlify, Google Sheets або іншими сервісами обліку заявок, а також Telegram для видачі доступу до курсу. Дані не продаються третім особам.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="4. Зберігання та захист даних">
+        <p>
+          Контактні дані зберігаються лише в обсязі, необхідному для надання послуг, підтримки користувачів, обліку оплат та виконання вимог законодавства. Доступ до даних має лише Виконавець або уповноважені особи, які забезпечують роботу курсу.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="5. Права користувача">
+        <p>
+          Користувач може звернутися до Виконавця, щоб уточнити, виправити або видалити свої контактні дані, якщо їх подальше зберігання не є необхідним для виконання договору, обліку платежів або законних інтересів Виконавця.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="6. Контакти з питань конфіденційності">
+        <SellerDetails />
+      </LegalSection>
+    </LegalPage>
+  );
+}
+
+function ContactsPage() {
+  return (
+    <LegalPage
+      title="Контакти продавця"
+      subtitle="Офіційна контактна інформація для звернень щодо оплати, доступу до курсу та підтримки."
+    >
+      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+        <SellerDetails />
+      </div>
+      <LegalSection title="Підтримка покупців">
+        <p>
+          Якщо виникли проблеми з оплатою, доступом до матеріалів або запитання щодо навчання, звертайтеся за номером телефону або на email, вказані на цій сторінці.
+        </p>
+      </LegalSection>
+      <LegalSection title="Сайт курсу">
+        <p>Офіційний сайт курсу: https://kostochka.org</p>
+      </LegalSection>
+    </LegalPage>
+  );
+}
+
+function SellerDetails() {
+  return (
+    <div className="space-y-2 text-zinc-700">
+      <p><span className="font-bold text-black">{seller.name}</span></p>
+      <p>ІПН: {seller.taxId}</p>
+      <p>Адреса: {seller.address}</p>
+      <p>Email: <a className="font-semibold text-black underline underline-offset-2" href={`mailto:${seller.email}`}>{seller.email}</a></p>
+      <p>Тел: <a className="font-semibold text-black underline underline-offset-2" href="tel:+380502346148">{seller.phone}</a></p>
+    </div>
+  );
+}
+
 function AfterPaymentStep({ number, title, text }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
@@ -919,28 +1169,42 @@ function MobileStickyCta({ navigateTo }) {
 function Footer({ imageErrors, setImageErrors, navigateTo }) {
   return (
     <footer className="relative z-10 border-t border-white/10 px-5 py-8 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-zinc-500 md:flex-row md:items-center md:justify-between">
+      <div className="mx-auto grid max-w-7xl gap-6 text-sm text-zinc-500 md:grid-cols-[1fr_auto] md:items-start">
         <div className="flex items-center gap-3">
           <LogoMark
             small
             hasError={imageErrors.logo}
             onError={() => setImageErrors((value) => ({ ...value, logo: true }))}
           />
-          <p>ТІКТОК НА МІЛЬЙОН © 2026. Мінікурс Артема Косточки.</p>
+          <div>
+            <p>ТІКТОК НА МІЛЬЙОН © 2026. Мінікурс Артема Косточки.</p>
+            <p className="mt-1">{seller.name}. ІПН: {seller.taxId}.</p>
+          </div>
         </div>
-        <div className="flex gap-5">
-          <button type="button" onClick={() => navigateTo("about")} className="transition hover:text-white">
-            Про мене
-          </button>
-          <button type="button" onClick={() => navigateTo("program")} className="transition hover:text-white">
-            Програма
-          </button>
-          <button type="button" onClick={() => navigateTo("program", "apply")} className="transition hover:text-white">
-            Заявка
-          </button>
+
+        <div className="grid gap-3 md:justify-items-end">
+          <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <FooterButton onClick={() => navigateTo("about")}>Про мене</FooterButton>
+            <FooterButton onClick={() => navigateTo("program")}>Програма</FooterButton>
+            <FooterButton onClick={() => navigateTo("program", "apply")}>Заявка</FooterButton>
+          </div>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 md:justify-end">
+            <FooterButton onClick={() => navigateTo("offer")}>Оферта</FooterButton>
+            <FooterButton onClick={() => navigateTo("refund")}>Повернення</FooterButton>
+            <FooterButton onClick={() => navigateTo("privacy")}>Конфіденційність</FooterButton>
+            <FooterButton onClick={() => navigateTo("contacts")}>Контакти</FooterButton>
+          </div>
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterButton({ onClick, children }) {
+  return (
+    <button type="button" onClick={onClick} className="transition hover:text-white">
+      {children}
+    </button>
   );
 }
 
