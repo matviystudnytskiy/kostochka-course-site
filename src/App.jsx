@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const LOGO_SRC = "/kostochka-logo.jpg";
@@ -115,7 +115,7 @@ const packages = [
       "Закритий чат учасників для розборів, нетворкінгу та підтримки",
       "Прямий зворотний зв’язок по ідеях, сценаріях і подачі",
       "Додаткові фішки, інсайди та розбори поза основною програмою",
-      "Іменний сертифікат PRO Content Creation Academy після виконання практичних завдань",
+      "Підійде, якщо хочеш не просто дивитися уроки, а отримувати правки по своїх відео, ідеях і сценаріях",
     ],
     recommended: true,
   },
@@ -154,7 +154,11 @@ const faqs = [
   },
 ];
 
-export default function CourseLandingPrototype() {
+export default function CourseLandingSite() {
+  const [activePage, setActivePage] = useState(() => {
+    if (typeof window === "undefined") return "about";
+    return window.location.pathname.replace(/\/$/, "") === "/program" ? "program" : "about";
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePackage, setActivePackage] = useState("pro");
   const [openFaq, setOpenFaq] = useState(0);
@@ -166,11 +170,55 @@ export default function CourseLandingPrototype() {
     [activePackage]
   );
 
+  useEffect(() => {
+    document.title = activePage === "about"
+      ? "Артем Косточка - TikTok Creator"
+      : "Програма - Артем Косточка";
+  }, [activePage]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const nextPage = window.location.pathname.replace(/\/$/, "") === "/program" ? "program" : "about";
+      setActivePage(nextPage);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (activePage !== "program" || !window.location.hash) return;
+
+    const targetId = window.location.hash.replace("#", "");
+    window.setTimeout(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
+    }, 120);
+  }, [activePage]);
+
+  const navigateTo = (page, targetId = null) => {
+    const nextPath = page === "program" ? "/program" : "/";
+    const currentPath = `${window.location.pathname}${window.location.hash}`;
+    const nextUrl = targetId ? `${nextPath}#${targetId}` : nextPath;
+
+    setActivePage(page);
+    setMenuOpen(false);
+
+    if (currentPath !== nextUrl) {
+      window.history.pushState({ page }, "", nextUrl);
+    }
+
+    window.setTimeout(() => {
+      if (targetId) {
+        document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 80);
+  };
+
   const handlePackageSelect = (packageId) => {
     setActivePackage(packageId);
-    window.setTimeout(() => {
-      document.getElementById("apply")?.scrollIntoView({ behavior: "smooth" });
-    }, 50);
+    navigateTo("program", "apply");
   };
 
   const handleSubmit = async (event) => {
@@ -187,7 +235,7 @@ export default function CourseLandingPrototype() {
       packageName: selectedPackage.name,
       amount: selectedPackage.amount,
       currency: "UAH",
-      source: "kostochka.pro",
+      source: "kostochka.org",
     };
 
     try {
@@ -221,543 +269,678 @@ export default function CourseLandingPrototype() {
     }
   };
 
+  const sharedProps = {
+    activePackage,
+    selectedPackage,
+    openFaq,
+    imageErrors,
+    formStatus,
+    setActivePackage,
+    setOpenFaq,
+    setImageErrors,
+    handlePackageSelect,
+    handleSubmit,
+    navigateTo,
+  };
+
   return (
     <div className="min-h-screen bg-[#070707] text-white selection:bg-white selection:text-black">
       <BackgroundGlow />
 
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070707]/82 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
-          <a href="#top" className="flex items-center gap-3">
-            <LogoMark
-              hasError={imageErrors.logo}
-              onError={() => setImageErrors((value) => ({ ...value, logo: true }))}
-            />
-            <div>
-              <p className="text-sm font-black uppercase tracking-[0.18em]">ТІКТОК НА МІЛЬЙОН</p>
-              <p className="text-xs text-zinc-400">Мінікурс Артема Косточки</p>
-            </div>
-          </a>
+      <Header
+        activePage={activePage}
+        menuOpen={menuOpen}
+        setMenuOpen={setMenuOpen}
+        imageErrors={imageErrors}
+        setImageErrors={setImageErrors}
+        navigateTo={navigateTo}
+      />
 
-          <div className="hidden items-center gap-7 text-sm text-zinc-300 md:flex">
-            <a className="transition hover:text-white" href="#about">
-              Про автора
-            </a>
-            <a className="transition hover:text-white" href="#program">
-              Програма
-            </a>
-            <a className="transition hover:text-white" href="#price">
-              Тарифи
-            </a>
-            <a className="transition hover:text-white" href="#faq">
-              FAQ
-            </a>
-            <a
-              className="rounded-full bg-white px-5 py-2.5 font-semibold text-black transition hover:bg-zinc-200"
-              href="#apply"
-            >
-              Залишити заявку
-            </a>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setMenuOpen((value) => !value)}
-            className="rounded-xl border border-white/10 p-2 md:hidden"
-            aria-label="Відкрити меню"
-          >
-            {menuOpen ? <Icon name="x" size={20} /> : <Icon name="menu" size={20} />}
-          </button>
-        </nav>
-
-        <AnimatePresence>
-          {menuOpen && (
+      <main className="relative z-10">
+        <AnimatePresence mode="wait">
+          {activePage === "about" ? (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden border-t border-white/10 bg-[#070707] md:hidden"
+              key="about-page"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.28 }}
             >
-              <div className="grid gap-1 px-5 py-4 text-sm text-zinc-300">
-                {[
-                  ["Про автора", "#about"],
-                  ["Програма", "#program"],
-                  ["Тарифи", "#price"],
-                  ["FAQ", "#faq"],
-                  ["Заявка", "#apply"],
-                ].map(([label, href]) => (
-                  <a
-                    key={label}
-                    href={href}
-                    onClick={() => setMenuOpen(false)}
-                    className="rounded-xl px-3 py-3 transition hover:bg-white/10"
-                  >
-                    {label}
-                  </a>
-                ))}
-              </div>
+              <AboutPage {...sharedProps} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="program-page"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.28 }}
+            >
+              <ProgramPage {...sharedProps} />
             </motion.div>
           )}
         </AnimatePresence>
-      </header>
-
-      <main id="top" className="relative z-10">
-        <section className="mx-auto grid max-w-7xl gap-12 px-5 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-24">
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.55 }}
-            className="flex flex-col justify-center"
-          >
-            <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm text-zinc-300">
-              <Icon name="sparkles" size={16} /> TikTok-контент для переглядів, заявок і впізнаваності
-            </div>
-
-            <h1 className="max-w-5xl text-5xl font-black leading-[0.92] tracking-tight md:text-7xl">
-              Мінікурс, який навчить робити контент до заявок.
-            </h1>
-
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-zinc-300">
-              11 практичних модулів без води: утримання уваги, тренди, сценарії, CapCut, техніка, алгоритми, продажі, особистий бренд, робота з помилками та брендами.
-            </p>
-
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              <MiniStat value="11" label="практичних модулів" />
-              <MiniStat value="500k+" label="підписників автора" />
-              <MiniStat value="1M+" label="на клієнтських проєктах" />
-            </div>
-
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <a
-                href="#price"
-                className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 font-bold text-black transition hover:bg-zinc-200"
-              >
-                Обрати тариф <Icon name="arrowRight" className="transition group-hover:translate-x-1" size={18} />
-              </a>
-              <a
-                href="#program"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-4 font-bold text-white transition hover:bg-white/10"
-              >
-                <Icon name="play" size={18} /> Подивитися програму
-              </a>
-            </div>
-
-            <p className="mt-5 text-sm text-zinc-500">
-              Після оплати ми зв’яжемось з тобою у Telegram протягом декількох хвилин.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ y: 26, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="relative"
-          >
-            <div className="absolute -left-6 top-12 hidden rounded-2xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl lg:block">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-white text-black">
-                  <Icon name="barChart" size={18} />
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-400">Особисті сторінки</p>
-                  <p className="font-black">500 000+</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="absolute -right-4 bottom-16 hidden rounded-2xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl lg:block">
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-white text-black">
-                  <Icon name="message" size={18} />
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-400">Клієнтські проєкти</p>
-                  <p className="font-black">1 000 000+</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[2.2rem] border border-white/10 bg-zinc-950 p-3 shadow-2xl shadow-black/40">
-              <div className="overflow-hidden rounded-[1.7rem] border border-white/10 bg-[#111114]">
-                <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <LogoMark
-                      small
-                      hasError={imageErrors.logo}
-                      onError={() => setImageErrors((value) => ({ ...value, logo: true }))}
-                    />
-                    <div>
-                      <p className="font-bold">Артем Косточка</p>
-                      <p className="text-xs text-zinc-500">creator · content strategy</p>
-                    </div>
-                  </div>
-                  <Icon name="instagram" size={21} className="text-zinc-400" />
-                </div>
-
-                <div className="p-5">
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-white/10 bg-zinc-900">
-                    {!imageErrors.photo ? (
-                      <img
-                        src={PHOTO_SRC}
-                        alt="Артем Косточка"
-                        className="h-full w-full object-cover object-center"
-                        onError={() => setImageErrors((value) => ({ ...value, photo: true }))}
-                      />
-                    ) : (
-                      <div className="grid h-full place-items-center bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.22),transparent_24%),linear-gradient(145deg,#27272a,#09090b)] p-8 text-center">
-                        <div>
-                          <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">photo slot</p>
-                          <p className="mt-3 text-3xl font-black">Артем Косточка</p>
-                        </div>
-                      </div>
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-5">
-                      <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Мінікурс «ТІКТОК НА МІЛЬЙОН»</p>
-                      <p className="mt-2 text-2xl font-black leading-tight">Контент, який утримує увагу і приводить людей.</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-                    <PhoneMetric value="11" label="модулів" />
-                    <PhoneMetric value="2" label="тарифи" />
-                    <PhoneMetric value="∞" label="доступ" />
-                  </div>
-
-                  <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                    <p className="text-sm font-semibold">Шлях учасника</p>
-                    <div className="mt-3 grid gap-2 text-sm text-zinc-400">
-                      <CheckLine text="Обирає тариф" />
-                      <CheckLine text="Заповнює дані" />
-                      <CheckLine text="Оплачує через WayForPay" />
-                      <CheckLine text="Отримує Telegram-доступ" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </section>
-
-        <section className="border-y border-white/10 bg-white/[0.03]">
-          <div className="mx-auto grid max-w-7xl gap-4 px-5 py-6 text-sm text-zinc-400 md:grid-cols-4 lg:px-8">
-            <TrustItem icon={<Icon name="shield" size={18} />} text="Закритий Telegram-доступ" />
-            <TrustItem icon={<Icon name="target" size={18} />} text="Фокус на контенті до результату" />
-            <TrustItem icon={<Icon name="users" size={18} />} text="Для креаторів, експертів і бізнесу" />
-            <TrustItem icon={<Icon name="zap" size={18} />} text="Практика після кожного уроку" />
-          </div>
-        </section>
-
-        <section id="about" className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
-          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-3">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem] bg-zinc-900">
-                {!imageErrors.photo ? (
-                  <img
-                    src={PHOTO_SRC}
-                    alt="Артем Косточка"
-                    className="h-full w-full object-cover object-center"
-                    onError={() => setImageErrors((value) => ({ ...value, photo: true }))}
-                  />
-                ) : (
-                  <div className="grid h-full place-items-center bg-zinc-900 p-8 text-center">
-                    <p className="text-zinc-500">Додайте фото у public/kostochka-photo.jpg</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.28em] text-zinc-500">Про автора</p>
-              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Привіт, я Артем Косточка.</h2>
-              <div className="mt-6 space-y-5 leading-8 text-zinc-300">
-                <p>
-                  Я займаюсь просуванням бізнесів та створенням вірального контенту вже більше 3 років. Я не просто розказую теорію з інтернету — я практик, який щодня працює з алгоритмами, співпрацює з великими українськими брендами і знає, як конвертувати перегляди у реальні гроші.
-                </p>
-                <p>
-                  До цього я передавав свої знання виключно в рамках особистого наставництва. Мої учні вже роблять круті результати, але індивідуальна робота коштує дорого і доступна не всім.
-                </p>
-                <p>
-                  Тому я запакував свою базу, робочі стратегії та алгоритми в один практичний курс. Мета — зробити цінну інформацію доступною для кожного, хто готовий брати телефон і реально працювати на свій результат.
-                </p>
-              </div>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                <StatCard value="500 000+" label="підписників на особистих сторінках" />
-                <StatCard value="1 000 000+" label="підписників на клієнтських проєктах" />
-                <StatCard value="3+ роки" label="щоденної практики з контентом і бізнесами" />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-5 py-10 lg:px-8">
-          <div className="rounded-[2rem] border border-white/10 bg-white p-7 text-black md:p-10">
-            <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-              <div>
-                <p className="text-sm font-black uppercase tracking-[0.28em] text-zinc-500">Результат</p>
-                <h2 className="mt-3 text-4xl font-black tracking-tight">Після курсу в тебе має бути не натхнення, а робоча система.</h2>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {outcomes.map((item) => (
-                  <div key={item} className="flex gap-3 rounded-2xl bg-zinc-100 p-4 text-sm leading-6 text-zinc-700">
-                    <Icon name="check" className="mt-0.5 shrink-0 text-black" size={18} />
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="program" className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
-          <div className="mb-10 max-w-3xl">
-            <p className="text-sm font-bold uppercase tracking-[0.28em] text-zinc-500">Програма курсу</p>
-            <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">11 кроків до твого результату. Без води.</h2>
-            <p className="mt-5 leading-8 text-zinc-300">
-              На старті є вступний урок, а далі — 11 практичних модулів із домашніми завданнями. Кожен модуль побудований навколо практики: подивився урок, виконав завдання, застосував на своєму контенті.
-            </p>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {modules.map((module, index) => (
-              <motion.div
-                key={module.number}
-                initial={{ y: 16, opacity: 0 }}
-                whileInView={{ y: 0, opacity: 1 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.4, delay: index * 0.035 }}
-                className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6 transition hover:border-white/25 hover:bg-white/[0.07]"
-              >
-                <p className="text-sm font-black text-zinc-500">Модуль {module.number}</p>
-                <h3 className="mt-5 text-2xl font-black">{module.title}</h3>
-                <p className="mt-4 leading-7 text-zinc-400">{module.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        <section id="price" className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
-          <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.28em] text-zinc-500">Тарифи</p>
-              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Обери свій формат навчання.</h2>
-            </div>
-            <p className="max-w-xl leading-8 text-zinc-300">
-              БАЗА — самостійне проходження. PRO — підтримка, перевірка домашніх завдань, чат учасників і додаткові розбори.
-            </p>
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-2">
-            {packages.map((pack) => {
-              const isActive = activePackage === pack.id;
-
-              return (
-                <button
-                  key={pack.id}
-                  type="button"
-                  onClick={() => handlePackageSelect(pack.id)}
-                  className={`rounded-[1.7rem] border p-6 text-left transition ${
-                    isActive
-                      ? "border-white bg-white text-black shadow-2xl shadow-white/10"
-                      : pack.recommended
-                      ? "border-white/35 bg-white/[0.08] text-white hover:border-white/55 hover:bg-white/[0.11]"
-                      : "border-white/10 bg-white/[0.04] text-white hover:border-white/25 hover:bg-white/[0.07]"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className={`text-sm font-black uppercase tracking-[0.22em] ${isActive ? "text-zinc-500" : "text-zinc-500"}`}>
-                        {pack.label}
-                      </p>
-                      <p className="mt-2 text-4xl font-black">{pack.name}</p>
-                      <p className={`mt-3 text-sm leading-6 ${isActive ? "text-zinc-600" : "text-zinc-400"}`}>{pack.subtitle}</p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-2">
-                      {pack.recommended && (
-                        <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${isActive ? "bg-black text-white" : "bg-white text-black"}`}>
-                          рекомендовано
-                        </span>
-                      )}
-                      {isActive && (
-                        <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
-                          обрано
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <p className="mt-7 text-5xl font-black tracking-tight">{pack.price}</p>
-                  <div className="mt-6 grid gap-3">
-                    {pack.features.map((feature) => (
-                      <div key={feature} className={`flex gap-3 text-sm leading-6 ${isActive ? "text-zinc-700" : "text-zinc-300"}`}>
-                        <Icon name="check" size={17} className="mt-1 shrink-0" />
-                        {feature}
-                      </div>
-                    ))}
-                  </div>
-                  <div className={`mt-7 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black ${isActive ? "bg-black text-white" : "bg-white text-black"}`}>
-                    {pack.button} <Icon name="arrowRight" size={16} />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 text-sm leading-7 text-zinc-300">
-            Обраний тариф: <span className="font-bold text-white">{selectedPackage.name}</span>. Після оплати ми зв’яжемось з тобою у Telegram протягом декількох хвилин.
-          </div>
-        </section>
-
-        <section id="faq" className="mx-auto max-w-4xl px-5 py-20 lg:px-8">
-          <div className="mb-8 text-center">
-            <p className="text-sm font-bold uppercase tracking-[0.28em] text-zinc-500">FAQ</p>
-            <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Питання перед записом.</h2>
-          </div>
-
-          <div className="grid gap-3">
-            {faqs.map((faq, index) => (
-              <div key={faq.question} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
-                <button
-                  type="button"
-                  onClick={() => setOpenFaq(openFaq === index ? -1 : index)}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left font-bold"
-                >
-                  {faq.question}
-                  <Icon name="chevronDown" className={`shrink-0 transition ${openFaq === index ? "rotate-180" : ""}`} size={20} />
-                </button>
-                <AnimatePresence initial={false}>
-                  {openFaq === index && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
-                      <p className="border-t border-white/10 px-5 py-5 leading-8 text-zinc-400">{faq.answer}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section id="apply" className="mx-auto max-w-7xl px-5 py-20 pb-28 lg:px-8">
-          <div className="rounded-[2.2rem] border border-white/10 bg-white p-7 text-black md:p-10">
-            <div className="grid gap-10 lg:grid-cols-[1fr_0.9fr] lg:items-center">
-              <div>
-                <p className="text-sm font-black uppercase tracking-[0.28em] text-zinc-500">Запис на курс</p>
-                <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Залиш дані — і переходь до оплати.</h2>
-                <p className="mt-5 max-w-2xl leading-8 text-zinc-700">
-                  Після оплати ми перевіримо заявку та надішлемо доступ у Telegram відповідно до обраного тарифу.
-                </p>
-                <div className="mt-7 flex flex-wrap gap-3 text-sm text-zinc-600">
-                  <Badge icon={<Icon name="clock" size={16} />} text="Доступ після оплати" />
-                  <Badge icon={<Icon name="star" size={16} />} text="БАЗА або PRO" />
-                  <Badge icon={<Icon name="message" size={16} />} text="Закритий Telegram" />
-                </div>
-                <p className="mt-7 text-sm leading-7 text-zinc-600">
-                  Якщо виникли проблеми або запитання: <span className="font-black text-black">+380 50 234 61 48</span>
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="rounded-[1.7rem] bg-zinc-100 p-4">
-                <div className="grid gap-3">
-                  <input
-                    name="name"
-                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
-                    placeholder="Ім’я *"
-                    autoComplete="name"
-                    required
-                  />
-                  <input
-                    name="phone"
-                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
-                    placeholder="Телефон *"
-                    type="tel"
-                    autoComplete="tel"
-                    required
-                  />
-                  <input
-                    name="telegram"
-                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
-                    placeholder="Telegram username *"
-                    autoComplete="off"
-                    required
-                  />
-                  <input
-                    name="email"
-                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
-                    placeholder="Email *"
-                    type="email"
-                    autoComplete="email"
-                    required
-                  />
-                  <select
-                    name="tariff"
-                    className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
-                    value={activePackage}
-                    onChange={(event) => setActivePackage(event.target.value)}
-                  >
-                    {packages.map((pack) => (
-                      <option key={pack.id} value={pack.id}>
-                        {pack.name} — {pack.price}
-                      </option>
-                    ))}
-                  </select>
-
-                  <label className="flex gap-3 px-1 text-xs leading-5 text-zinc-500">
-                    <input type="checkbox" required className="mt-1 h-4 w-4 shrink-0 accent-black" />
-                    <span>
-                      Погоджуюсь з умовами доступу до курсу та обробкою моїх контактних даних для зв’язку щодо навчання.
-                    </span>
-                  </label>
-
-                  {formStatus.error && (
-                    <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
-                      {formStatus.error}
-                    </p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={formStatus.loading}
-                    className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-6 py-4 font-black text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-500"
-                  >
-                    {formStatus.loading ? "Створюємо оплату..." : "Перейти до оплати"}
-                    {!formStatus.loading && <Icon name="arrowRight" className="transition group-hover:translate-x-1" size={18} />}
-                  </button>
-
-                  <p className="px-1 text-xs leading-5 text-zinc-500">
-                    Обраний тариф: <span className="font-black text-black">{selectedPackage.name}</span>, сума до оплати: <span className="font-black text-black">{selectedPackage.price}</span>.
-                  </p>
-                </div>
-              </form>
-            </div>
-          </div>
-        </section>
       </main>
 
-      <footer className="relative z-10 border-t border-white/10 px-5 py-8 lg:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-zinc-500 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <LogoMark
-              small
-              hasError={imageErrors.logo}
-              onError={() => setImageErrors((value) => ({ ...value, logo: true }))}
-            />
-            <p>ТІКТОК НА МІЛЬЙОН © 2026. Мінікурс Артема Косточки.</p>
+      {activePage === "program" && <MobileStickyCta navigateTo={navigateTo} />}
+
+      <Footer imageErrors={imageErrors} setImageErrors={setImageErrors} navigateTo={navigateTo} />
+    </div>
+  );
+}
+
+function Header({ activePage, menuOpen, setMenuOpen, imageErrors, setImageErrors, navigateTo }) {
+  return (
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070707]/88 backdrop-blur-xl">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+        <button type="button" onClick={() => navigateTo("about")} className="flex items-center gap-3 text-left">
+          <LogoMark
+            hasError={imageErrors.logo}
+            onError={() => setImageErrors((value) => ({ ...value, logo: true }))}
+          />
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.18em]">ТІКТОК НА МІЛЬЙОН</p>
+            <p className="text-xs text-zinc-400">Мінікурс Артема Косточки</p>
           </div>
-          <div className="flex gap-5">
-            <a href="#about" className="transition hover:text-white">
-              Автор
+        </button>
+
+        <div className="hidden items-center gap-3 text-sm text-zinc-300 md:flex">
+          <NavButton active={activePage === "about"} onClick={() => navigateTo("about")}>Про мене</NavButton>
+          <NavButton active={activePage === "program"} onClick={() => navigateTo("program")}>Програма</NavButton>
+          <button
+            type="button"
+            onClick={() => navigateTo("program", "apply")}
+            className="rounded-full bg-white px-5 py-2.5 font-semibold text-black transition hover:bg-zinc-200"
+          >
+            Залишити заявку
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setMenuOpen((value) => !value)}
+          className="rounded-xl border border-white/10 p-2 md:hidden"
+          aria-label="Відкрити меню"
+        >
+          {menuOpen ? <Icon name="x" size={20} /> : <Icon name="menu" size={20} />}
+        </button>
+      </nav>
+
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden border-t border-white/10 bg-[#070707] md:hidden"
+          >
+            <div className="grid gap-1 px-5 py-4 text-sm text-zinc-300">
+              <button type="button" onClick={() => navigateTo("about")} className="rounded-xl px-3 py-3 text-left transition hover:bg-white/10">
+                Про мене
+              </button>
+              <button type="button" onClick={() => navigateTo("program")} className="rounded-xl px-3 py-3 text-left transition hover:bg-white/10">
+                Програма
+              </button>
+              <button type="button" onClick={() => navigateTo("program", "apply")} className="rounded-xl px-3 py-3 text-left transition hover:bg-white/10">
+                Залишити заявку
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </header>
+  );
+}
+
+function NavButton({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-4 py-2.5 font-semibold transition ${
+        active ? "bg-white text-black" : "text-zinc-300 hover:bg-white/10 hover:text-white"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function AboutPage({ imageErrors, setImageErrors, navigateTo }) {
+  return (
+    <section className="mx-auto max-w-7xl px-5 py-14 lg:px-8 lg:py-24">
+      <div className="grid gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] p-3"
+        >
+          <div className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem] bg-zinc-900">
+            {!imageErrors.photo ? (
+              <img
+                src={PHOTO_SRC}
+                alt="Артем Косточка"
+                className="h-full w-full object-cover object-center"
+                onError={() => setImageErrors((value) => ({ ...value, photo: true }))}
+              />
+            ) : (
+              <div className="grid h-full place-items-center bg-zinc-900 p-8 text-center">
+                <p className="text-zinc-500">Додайте фото у public/kostochka-photo.jpg</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.08 }}
+        >
+          <p className="text-sm font-bold uppercase tracking-[0.28em] text-zinc-500">Про мене</p>
+          <h1 className="mt-3 text-5xl font-black tracking-tight md:text-7xl">Привіт, я Артем Косточка.</h1>
+          <div className="mt-7 space-y-5 text-lg leading-8 text-zinc-300">
+            <p>
+              Я займаюсь просуванням бізнесів та створенням вірального контенту вже більше 3 років. Я не просто розказую теорію з інтернету — я практик, який щодня працює з алгоритмами, співпрацює з великими українськими брендами і знає, як конвертувати перегляди у реальні гроші.
+            </p>
+            <p>
+              До цього я передавав свої знання виключно в рамках особистого наставництва. Мої учні вже роблять круті результати, але індивідуальна робота коштує дорого і доступна не всім.
+            </p>
+            <p>
+              Тому я запакував свою базу, робочі стратегії та алгоритми в один практичний курс. Мета — зробити цінну інформацію доступною для кожного, хто готовий брати телефон і реально працювати на свій результат.
+            </p>
+          </div>
+
+          <div className="mt-9 grid gap-4 sm:grid-cols-3">
+            <StatCard value="500 000+" label="підписників на особистих сторінках" />
+            <StatCard value="1 000 000+" label="підписників на клієнтських проєктах" />
+            <StatCard value="3+ роки" label="щоденної практики з контентом і бізнесами" />
+          </div>
+
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => navigateTo("program")}
+              className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 font-bold text-black transition hover:bg-zinc-200"
+            >
+              Перейти до програми <Icon name="arrowRight" className="transition group-hover:translate-x-1" size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigateTo("program", "apply")}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-4 font-bold text-white transition hover:bg-white/10"
+            >
+              Залишити заявку
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+function ProgramPage({
+  activePackage,
+  selectedPackage,
+  openFaq,
+  imageErrors,
+  formStatus,
+  setActivePackage,
+  setOpenFaq,
+  setImageErrors,
+  handlePackageSelect,
+  handleSubmit,
+}) {
+  return (
+    <>
+      <section className="mx-auto grid max-w-7xl gap-12 px-5 py-16 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-24">
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.55 }}
+          className="flex flex-col justify-center"
+        >
+          <h1 className="max-w-5xl text-4xl font-black leading-[0.95] tracking-tight sm:text-5xl md:text-7xl">
+            Мінікурс, який навчить робити перегляди.
+          </h1>
+
+          <p className="mt-7 max-w-2xl text-lg leading-8 text-zinc-300">
+            11 практичних модулів без води: як утримувати увагу, адаптувати тренди, писати живі сценарії, монтувати динамічно й перетворювати перегляди у впізнаваність, довіру та заявки.
+          </p>
+
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            <MiniStat value="11" label="практичних модулів" />
+            <MiniStat value="500k+" label="підписників автора" />
+            <MiniStat value="1M+" label="на клієнтських проєктах" />
+          </div>
+
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <a
+              href="#price"
+              className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-4 font-bold text-black transition hover:bg-zinc-200"
+            >
+              Обрати тариф <Icon name="arrowRight" className="transition group-hover:translate-x-1" size={18} />
             </a>
-            <a href="#program" className="transition hover:text-white">
-              Програма
+            <a
+              href="#program"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-4 font-bold text-white transition hover:bg-white/10"
+            >
+              <Icon name="play" size={18} /> Подивитися програму
             </a>
-            <a href="#price" className="transition hover:text-white">
-              Тарифи
-            </a>
-            <a href="#apply" className="transition hover:text-white">
-              Оплата
-            </a>
+          </div>
+
+          <p className="mt-5 text-sm text-zinc-500">
+            Після оплати ми зв’яжемось з тобою у Telegram протягом декількох хвилин.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ y: 26, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="relative"
+        >
+          <div className="absolute -left-6 top-12 hidden rounded-2xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl lg:block">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-white text-black">
+                <Icon name="barChart" size={18} />
+              </div>
+              <div>
+                <p className="text-xs text-zinc-400">Особисті сторінки</p>
+                <p className="font-black">500 000+</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="absolute -right-4 bottom-16 hidden rounded-2xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl lg:block">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-white text-black">
+                <Icon name="message" size={18} />
+              </div>
+              <div>
+                <p className="text-xs text-zinc-400">Клієнтські проєкти</p>
+                <p className="font-black">1 000 000+</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[2.2rem] border border-white/10 bg-zinc-950 p-3 shadow-2xl shadow-black/40">
+            <div className="overflow-hidden rounded-[1.7rem] border border-white/10 bg-[#111114]">
+              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <LogoMark
+                    small
+                    hasError={imageErrors.logo}
+                    onError={() => setImageErrors((value) => ({ ...value, logo: true }))}
+                  />
+                  <div>
+                    <p className="font-bold">Артем Косточка</p>
+                    <p className="text-xs text-zinc-500">creator · content strategy</p>
+                  </div>
+                </div>
+                <Icon name="instagram" size={21} className="text-zinc-400" />
+              </div>
+
+              <div className="p-5">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem] border border-white/10 bg-zinc-900">
+                  {!imageErrors.photo ? (
+                    <img
+                      src={PHOTO_SRC}
+                      alt="Артем Косточка"
+                      className="h-full w-full object-cover object-center"
+                      onError={() => setImageErrors((value) => ({ ...value, photo: true }))}
+                    />
+                  ) : (
+                    <div className="grid h-full place-items-center bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.22),transparent_24%),linear-gradient(145deg,#27272a,#09090b)] p-8 text-center">
+                      <div>
+                        <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">photo slot</p>
+                        <p className="mt-3 text-3xl font-black">Артем Косточка</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-5">
+                    <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Мінікурс «ТІКТОК НА МІЛЬЙОН»</p>
+                    <p className="mt-2 text-2xl font-black leading-tight">Контент, який утримує увагу і приводить людей.</p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-3 gap-3 text-center">
+                  <PhoneMetric value="11" label="модулів" />
+                  <PhoneMetric value="2" label="тарифи" />
+                  <PhoneMetric value="∞" label="доступ" />
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <p className="text-sm font-semibold">Шлях учасника</p>
+                  <div className="mt-3 grid gap-2 text-sm text-zinc-400">
+                    <CheckLine text="Обирає тариф" />
+                    <CheckLine text="Заповнює дані" />
+                    <CheckLine text="Оплачує через WayForPay" />
+                    <CheckLine text="Отримує Telegram-доступ" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      <section className="border-y border-white/10 bg-white/[0.03]">
+        <div className="mx-auto grid max-w-7xl gap-4 px-5 py-6 text-sm text-zinc-400 md:grid-cols-4 lg:px-8">
+          <TrustItem icon={<Icon name="shield" size={18} />} text="Закритий Telegram-доступ" />
+          <TrustItem icon={<Icon name="target" size={18} />} text="Фокус на контенті до результату" />
+          <TrustItem icon={<Icon name="users" size={18} />} text="Для креаторів, експертів і бізнесу" />
+          <TrustItem icon={<Icon name="zap" size={18} />} text="Практика після кожного уроку" />
+        </div>
+      </section>
+
+      <section id="program" className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
+        <div className="mb-10 max-w-3xl">
+          <p className="text-sm font-bold uppercase tracking-[0.28em] text-zinc-500">Програма курсу</p>
+          <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">11 кроків до твого результату. Без води.</h2>
+          <p className="mt-5 leading-8 text-zinc-300">
+            На старті є вступний урок, а далі — 11 практичних модулів із домашніми завданнями. Кожен модуль побудований навколо практики: подивився урок, виконав завдання, застосував на своєму контенті.
+          </p>
+        </div>
+
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-4 md:p-6 lg:p-8">
+          <div className="mb-6 flex flex-col gap-2 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-zinc-500">Структура курсу</p>
+              <h3 className="mt-2 text-2xl font-black tracking-tight md:text-3xl">Вступний урок + 11 практичних модулів</h3>
+            </div>
+            <p className="max-w-md text-sm leading-6 text-zinc-400">
+              Кожен блок одразу прив’язаний до практики: подивився, виконав, застосував на власному контенті.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {modules.map((module) => (
+              <article
+                key={module.number}
+                className="rounded-[1.25rem] border border-white/10 bg-black/30 p-5 transition hover:border-white/25 hover:bg-black/40"
+              >
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-zinc-500">Модуль {module.number}</p>
+                <h3 className="mt-4 text-xl font-black leading-tight">{module.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-zinc-400">{module.description}</p>
+              </article>
+            ))}
           </div>
         </div>
-      </footer>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-5 py-10 lg:px-8">
+        <div className="rounded-[2rem] border border-white/10 bg-white p-7 text-black md:p-10">
+          <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+            <div>
+              <p className="text-sm font-black uppercase tracking-[0.28em] text-zinc-500">Результат</p>
+              <h2 className="mt-3 text-4xl font-black tracking-tight">Після курсу в тебе має бути не натхнення, а робоча система.</h2>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {outcomes.map((item) => (
+                <div key={item} className="flex gap-3 rounded-2xl bg-zinc-100 p-4 text-sm leading-6 text-zinc-700">
+                  <Icon name="check" className="mt-0.5 shrink-0 text-black" size={18} />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="price" className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
+        <div className="mb-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.28em] text-zinc-500">Тарифи</p>
+            <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Обери свій формат навчання.</h2>
+          </div>
+          <p className="max-w-xl leading-8 text-zinc-300">
+            БАЗА — самостійне проходження. PRO — підтримка, перевірка домашніх завдань, чат учасників і додаткові розбори.
+          </p>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-2">
+          {packages.map((pack) => {
+            const isActive = activePackage === pack.id;
+
+            return (
+              <button
+                key={pack.id}
+                type="button"
+                onClick={() => handlePackageSelect(pack.id)}
+                className={`rounded-[1.7rem] border p-6 text-left transition ${
+                  isActive
+                    ? "border-white bg-white text-black shadow-2xl shadow-white/10"
+                    : pack.recommended
+                    ? "border-white/35 bg-white/[0.08] text-white hover:border-white/55 hover:bg-white/[0.11]"
+                    : "border-white/10 bg-white/[0.04] text-white hover:border-white/25 hover:bg-white/[0.07]"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-[0.22em] text-zinc-500">{pack.label}</p>
+                    <p className="mt-2 text-4xl font-black">{pack.name}</p>
+                    <p className={`mt-3 text-sm leading-6 ${isActive ? "text-zinc-600" : "text-zinc-400"}`}>{pack.subtitle}</p>
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    {pack.recommended && (
+                      <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${isActive ? "bg-black text-white" : "bg-white text-black"}`}>
+                        рекомендовано
+                      </span>
+                    )}
+                    {isActive && (
+                      <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
+                        обрано
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <p className="mt-7 text-5xl font-black tracking-tight">{pack.price}</p>
+                <div className="mt-6 grid gap-3">
+                  {pack.features.map((feature) => (
+                    <div key={feature} className={`flex gap-3 text-sm leading-6 ${isActive ? "text-zinc-700" : "text-zinc-300"}`}>
+                      <Icon name="check" size={17} className="mt-1 shrink-0" />
+                      {feature}
+                    </div>
+                  ))}
+                </div>
+                <div className={`mt-7 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black ${isActive ? "bg-black text-white" : "bg-white text-black"}`}>
+                  {pack.button} <Icon name="arrowRight" size={16} />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 text-sm leading-7 text-zinc-300">
+          Обраний тариф: <span className="font-bold text-white">{selectedPackage.name}</span>. Після оплати ми зв’яжемось з тобою у Telegram протягом декількох хвилин.
+        </div>
+      </section>
+
+      <section id="faq" className="mx-auto max-w-4xl px-5 py-20 lg:px-8">
+        <div className="mb-8 text-center">
+          <p className="text-sm font-bold uppercase tracking-[0.28em] text-zinc-500">FAQ</p>
+          <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Питання перед записом.</h2>
+        </div>
+
+        <div className="grid gap-3">
+          {faqs.map((faq, index) => (
+            <div key={faq.question} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
+              <button
+                type="button"
+                onClick={() => setOpenFaq(openFaq === index ? -1 : index)}
+                className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left font-bold"
+              >
+                {faq.question}
+                <Icon name="chevronDown" className={`shrink-0 transition ${openFaq === index ? "rotate-180" : ""}`} size={20} />
+              </button>
+              <AnimatePresence initial={false}>
+                {openFaq === index && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
+                    <p className="border-t border-white/10 px-5 py-5 leading-8 text-zinc-400">{faq.answer}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="apply" className="mx-auto max-w-7xl px-5 py-20 pb-32 lg:px-8">
+        <div className="mb-5 grid gap-4 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 text-zinc-300 md:grid-cols-4 md:p-6">
+          <AfterPaymentStep number="01" title="Залишаєш дані" text="Обираєш тариф і заповнюєш коротку форму." />
+          <AfterPaymentStep number="02" title="Оплачуєш" text="Переходиш до безпечної оплати через WayForPay." />
+          <AfterPaymentStep number="03" title="Ми перевіряємо" text="Перевіряємо оплату та заявку після підтвердження." />
+          <AfterPaymentStep number="04" title="Отримуєш доступ" text="Зв’язуємось у Telegram і видаємо доступ до курсу." />
+        </div>
+
+        <div className="rounded-[2.2rem] border border-white/10 bg-white p-7 text-black md:p-10">
+          <div className="grid gap-10 lg:grid-cols-[1fr_0.9fr] lg:items-center">
+            <div>
+              <p className="text-sm font-black uppercase tracking-[0.28em] text-zinc-500">Запис на курс</p>
+              <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Залиш дані — і переходь до оплати.</h2>
+              <p className="mt-5 max-w-2xl leading-8 text-zinc-700">
+                Після оплати ми перевіримо заявку та надішлемо доступ у Telegram відповідно до обраного тарифу.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3 text-sm text-zinc-600">
+                <Badge icon={<Icon name="clock" size={16} />} text="Доступ після оплати" />
+                <Badge icon={<Icon name="star" size={16} />} text="БАЗА або PRO" />
+                <Badge icon={<Icon name="message" size={16} />} text="Закритий Telegram" />
+              </div>
+              <div className="mt-7 text-sm leading-7 text-zinc-600">
+                <p>Якщо виникли проблеми або запитання:</p>
+                <p className="mt-1 font-black text-black">+380 50 234 61 48</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="rounded-[1.7rem] bg-zinc-100 p-4">
+              <div className="grid gap-3">
+                <input
+                  name="name"
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
+                  placeholder="Ім’я *"
+                  autoComplete="name"
+                  required
+                />
+                <input
+                  name="phone"
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
+                  placeholder="Телефон *"
+                  type="tel"
+                  autoComplete="tel"
+                  required
+                />
+                <input
+                  name="telegram"
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
+                  placeholder="Telegram username, наприклад @username *"
+                  autoComplete="off"
+                  required
+                />
+                <input
+                  name="email"
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
+                  placeholder="Email *"
+                  type="email"
+                  autoComplete="email"
+                  required
+                />
+                <select
+                  name="tariff"
+                  className="rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-sm outline-none transition focus:border-zinc-500"
+                  value={activePackage}
+                  onChange={(event) => setActivePackage(event.target.value)}
+                >
+                  {packages.map((pack) => (
+                    <option key={pack.id} value={pack.id}>
+                      {pack.name} — {pack.price}
+                    </option>
+                  ))}
+                </select>
+
+                <label className="flex gap-3 px-1 text-xs leading-5 text-zinc-500">
+                  <input type="checkbox" required className="mt-1 h-4 w-4 shrink-0 accent-black" />
+                  <span>
+                    Погоджуюсь з <a href="/offer" className="font-semibold text-black underline underline-offset-2">умовами доступу до курсу</a>, <a href="/privacy" className="font-semibold text-black underline underline-offset-2">політикою конфіденційності</a> та обробкою моїх контактних даних для зв’язку щодо навчання.
+                  </span>
+                </label>
+
+                {formStatus.error && (
+                  <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">
+                    {formStatus.error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={formStatus.loading}
+                  className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-6 py-4 font-black text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-500"
+                >
+                  {formStatus.loading ? "Створюємо оплату..." : "Перейти до оплати"}
+                  {!formStatus.loading && <Icon name="arrowRight" className="transition group-hover:translate-x-1" size={18} />}
+                </button>
+
+                <p className="px-1 text-xs leading-5 text-zinc-500">
+                  Обраний тариф: <span className="font-black text-black">{selectedPackage.name}</span>, сума до оплати: <span className="font-black text-black">{selectedPackage.price}</span>.
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function AfterPaymentStep({ number, title, text }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <p className="text-xs font-black uppercase tracking-[0.22em] text-zinc-500">{number}</p>
+      <h3 className="mt-3 font-black text-white">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-zinc-400">{text}</p>
     </div>
+  );
+}
+
+function MobileStickyCta({ navigateTo }) {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#070707]/92 px-4 py-3 backdrop-blur-xl md:hidden">
+      <button
+        type="button"
+        onClick={() => navigateTo("program", "price")}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-black shadow-2xl shadow-black/40"
+      >
+        Обрати тариф — від 1499 грн <Icon name="arrowRight" size={16} />
+      </button>
+    </div>
+  );
+}
+
+function Footer({ imageErrors, setImageErrors, navigateTo }) {
+  return (
+    <footer className="relative z-10 border-t border-white/10 px-5 py-8 lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm text-zinc-500 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3">
+          <LogoMark
+            small
+            hasError={imageErrors.logo}
+            onError={() => setImageErrors((value) => ({ ...value, logo: true }))}
+          />
+          <p>ТІКТОК НА МІЛЬЙОН © 2026. Мінікурс Артема Косточки.</p>
+        </div>
+        <div className="flex gap-5">
+          <button type="button" onClick={() => navigateTo("about")} className="transition hover:text-white">
+            Про мене
+          </button>
+          <button type="button" onClick={() => navigateTo("program")} className="transition hover:text-white">
+            Програма
+          </button>
+          <button type="button" onClick={() => navigateTo("program", "apply")} className="transition hover:text-white">
+            Заявка
+          </button>
+        </div>
+      </div>
+    </footer>
   );
 }
 
