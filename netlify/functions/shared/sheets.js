@@ -2,9 +2,16 @@ import { google } from "googleapis";
 
 const SHEET_NAME = process.env.GOOGLE_SHEET_NAME || "Orders";
 
+function normalizePrivateKey(value = "") {
+  return value
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\\n/g, "\n");
+}
+
 function getSheetsClient() {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const privateKey = normalizePrivateKey(process.env.GOOGLE_PRIVATE_KEY);
 
   if (!clientEmail || !privateKey || !process.env.GOOGLE_SHEETS_ID) {
     throw new Error("Google Sheets environment variables are missing.");
