@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { appendOrder } from "./_sheets.js";
+import { appendOrder } from "./shared/sheets.js";
 
 const TARIFFS = {
   base: {
