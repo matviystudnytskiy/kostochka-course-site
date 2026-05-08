@@ -11,6 +11,8 @@ const pagePaths = {
   refund: "/refund",
   privacy: "/privacy",
   contacts: "/contacts",
+  paymentSuccess: "/payment-success",
+  paymentDeclined: "/payment-declined",
 };
 
 const pageTitles = {
@@ -20,6 +22,8 @@ const pageTitles = {
   refund: "Політика повернення - Артем Косточка",
   privacy: "Політика конфіденційності - Артем Косточка",
   contacts: "Контакти - Артем Косточка",
+  paymentSuccess: "Оплату прийнято - Артем Косточка",
+  paymentDeclined: "Оплату не завершено - Артем Косточка",
 };
 
 function getPageFromPath() {
@@ -32,6 +36,8 @@ function getPageFromPath() {
   if (path === "/refund") return "refund";
   if (path === "/privacy") return "privacy";
   if (path === "/contacts") return "contacts";
+  if (path === "/payment-success") return "paymentSuccess";
+  if (path === "/payment-declined") return "paymentDeclined";
 
   return "about";
 }
@@ -355,6 +361,8 @@ function PageRenderer({ activePage, sharedProps }) {
   if (activePage === "refund") return <RefundPage />;
   if (activePage === "privacy") return <PrivacyPage />;
   if (activePage === "contacts") return <ContactsPage />;
+  if (activePage === "paymentSuccess") return <PaymentSuccessPage navigateTo={sharedProps.navigateTo} />;
+  if (activePage === "paymentDeclined") return <PaymentDeclinedPage navigateTo={sharedProps.navigateTo} />;
   return <AboutPage {...sharedProps} />;
 }
 
@@ -570,7 +578,7 @@ function ProgramPage({
           </div>
 
           <p className="mt-5 text-sm text-zinc-500">
-            Після оплати ми зв’яжемось з тобою у Telegram протягом декількох хвилин.
+            Після оплати Артем отримає заявку та надасть доступ у Telegram вручну протягом 24 годин.
           </p>
         </motion.div>
 
@@ -793,7 +801,7 @@ function ProgramPage({
         </div>
 
         <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 text-sm leading-7 text-zinc-300">
-          Обраний тариф: <span className="font-bold text-white">{selectedPackage.name}</span>. Після оплати ми зв’яжемось з тобою у Telegram протягом декількох хвилин.
+          Обраний тариф: <span className="font-bold text-white">{selectedPackage.name}</span>. Після оплати Артем отримає заявку та надасть доступ у Telegram вручну протягом 24 годин.
         </div>
       </section>
 
@@ -830,8 +838,8 @@ function ProgramPage({
         <div className="mb-5 grid gap-4 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 text-zinc-300 md:grid-cols-4 md:p-6">
           <AfterPaymentStep number="01" title="Залишаєш дані" text="Обираєш тариф і заповнюєш коротку форму." />
           <AfterPaymentStep number="02" title="Оплачуєш" text="Переходиш до безпечної оплати через WayForPay." />
-          <AfterPaymentStep number="03" title="Ми перевіряємо" text="Перевіряємо оплату та заявку після підтвердження." />
-          <AfterPaymentStep number="04" title="Отримуєш доступ" text="Зв’язуємось у Telegram і видаємо доступ до курсу." />
+          <AfterPaymentStep number="03" title="Артем отримує заявку" text="Після підтвердження оплати заявка потрапляє до списку покупців." />
+          <AfterPaymentStep number="04" title="Отримуєш доступ" text="Артем вручну зв’язується у Telegram і надає доступ до курсу." />
         </div>
 
         <div className="rounded-[2.2rem] border border-white/10 bg-white p-7 text-black md:p-10">
@@ -840,7 +848,7 @@ function ProgramPage({
               <p className="text-sm font-black uppercase tracking-[0.28em] text-zinc-500">Запис на курс</p>
               <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Залиш дані — і переходь до оплати.</h2>
               <p className="mt-5 max-w-2xl leading-8 text-zinc-700">
-                Після оплати ми перевіримо заявку та надішлемо доступ у Telegram відповідно до обраного тарифу.
+                Після оплати Артем отримає заявку та вручну надасть доступ у Telegram відповідно до обраного тарифу протягом 24 годин.
               </p>
               <div className="mt-7 flex flex-wrap gap-3 text-sm text-zinc-600">
                 <Badge icon={<Icon name="clock" size={16} />} text="Доступ після оплати" />
@@ -1127,6 +1135,70 @@ function ContactsPage() {
         <p>Офіційний сайт курсу: https://kostochka.org</p>
       </LegalSection>
     </LegalPage>
+  );
+}
+
+function PaymentStatusPage({ type, title, text, actionLabel, onAction }) {
+  const isSuccess = type === "success";
+
+  return (
+    <section className="mx-auto max-w-4xl px-5 py-14 lg:px-8 lg:py-20">
+      <div className="rounded-[2rem] border border-white/10 bg-white p-6 text-black shadow-2xl shadow-black/30 md:p-10">
+        <div className={`grid h-14 w-14 place-items-center rounded-2xl ${isSuccess ? "bg-black text-white" : "bg-zinc-200 text-black"}`}>
+          <Icon name={isSuccess ? "check" : "x"} size={26} />
+        </div>
+        <h1 className="mt-6 text-4xl font-black tracking-tight md:text-5xl">{title}</h1>
+        <p className="mt-5 max-w-2xl leading-8 text-zinc-700">{text}</p>
+        <div className="mt-8 grid gap-3 rounded-2xl bg-zinc-100 p-5 text-sm leading-6 text-zinc-700 md:grid-cols-3">
+          <div>
+            <p className="font-black text-black">1. Заявка</p>
+            <p className="mt-1">Дані покупця фіксуються після оформлення.</p>
+          </div>
+          <div>
+            <p className="font-black text-black">2. Перевірка</p>
+            <p className="mt-1">Оплата підтверджується через WayForPay.</p>
+          </div>
+          <div>
+            <p className="font-black text-black">3. Доступ</p>
+            <p className="mt-1">Артем вручну додає покупця в Telegram.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-8 inline-flex items-center justify-center gap-2 rounded-2xl bg-black px-6 py-4 font-black text-white transition hover:bg-zinc-800"
+        >
+          {actionLabel} <Icon name="arrowRight" size={18} />
+        </button>
+        <p className="mt-6 text-sm leading-7 text-zinc-600">
+          Якщо виникли проблеми або запитання: <span className="font-black text-black">+380 50 234 61 48</span>
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function PaymentSuccessPage({ navigateTo }) {
+  return (
+    <PaymentStatusPage
+      type="success"
+      title="Оплату прийнято."
+      text="Ми отримали вашу заявку. Артем зв’яжеться з вами у Telegram і надасть доступ до курсу відповідно до обраного тарифу протягом 24 годин."
+      actionLabel="Повернутися до програми"
+      onAction={() => navigateTo("program")}
+    />
+  );
+}
+
+function PaymentDeclinedPage({ navigateTo }) {
+  return (
+    <PaymentStatusPage
+      type="declined"
+      title="Оплату не завершено."
+      text="Платіж не був підтверджений. Спробуйте ще раз або зверніться за номером підтримки, якщо оплата була списана, але доступ не надійшов."
+      actionLabel="Спробувати ще раз"
+      onAction={() => navigateTo("program", "apply")}
+    />
   );
 }
 
