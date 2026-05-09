@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const LOGO_SRC = "/kostochka-logo.jpg";
 const PHOTO_SRC = "/kostochka-photo.jpg";
+const ABOUT_PHOTO_SRC = "/kostochka-photo-alternative.jpg";
 
 const pagePaths = {
   about: "/",
@@ -16,7 +17,7 @@ const pagePaths = {
 };
 
 const pageTitles = {
-  about: "Артем Косточка - TikTok Creator",
+  about: "КУРС ТІКТОК НА МІЛЬЙОН",
   program: "Програма - Артем Косточка",
   offer: "Публічна оферта - Артем Косточка",
   refund: "Політика повернення - Артем Косточка",
@@ -166,10 +167,10 @@ const faqs = [
       "Ні. Курс підходить для локального бізнесу, експертів, власників Telegram-каналів, початківців у контенті та людей, які хочуть просувати себе або свої послуги через Instagram, TikTok і Telegram.",
   },
   {
-    question: "Потрібна велика аудиторія на старті?",
-    answer:
-      "Ні. Курс побудований так, щоб ти міг стартувати навіть із маленькою аудиторією: зрозуміти свою подачу, створити систему контенту й поступово перетворювати увагу в довіру та заявки.",
-  },
+  question: "Чи потрібна велика аудиторія на старті?",
+  answer:
+    "Ні. Курс побудований так, щоб ти міг стартувати навіть із маленькою аудиторією: зрозуміти свою подачу, створити систему контенту й поступово перетворювати увагу в довіру та заявки.",
+},
   {
     question: "Скільки потрібно часу на навчання?",
     answer:
@@ -195,7 +196,7 @@ const faqs = [
 const seller = {
   name: "ФОП Кость Артем Сергійович",
   taxId: "3795301399",
-  address: "Україна, м. Луцьк, вул. Стрілецька 6а",
+  address: "Україна, м. Луцьк, вул. Стрілецька, 6а",
   email: "kostartemko@gmail.com",
   phone: "+380 50 234 61 48",
 };
@@ -207,6 +208,7 @@ export default function CourseLandingSite() {
   const [openFaq, setOpenFaq] = useState(0);
   const [imageErrors, setImageErrors] = useState({ logo: false, photo: false });
   const [formStatus, setFormStatus] = useState({ loading: false, error: "" });
+  const [pendingScrollTarget, setPendingScrollTarget] = useState(null);
 
   const selectedPackage = useMemo(
     () => packages.find((item) => item.id === activePackage) ?? packages[1],
@@ -225,13 +227,30 @@ export default function CourseLandingSite() {
   }, []);
 
   useEffect(() => {
-    if (activePage !== "program" || !window.location.hash) return;
+    const targetId = pendingScrollTarget || window.location.hash.replace("#", "");
 
-    const targetId = window.location.hash.replace("#", "");
-    window.setTimeout(() => {
-      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
-    }, 120);
-  }, [activePage]);
+    if (activePage !== "program" || !targetId) return;
+
+    let attempts = 0;
+    const maxAttempts = 12;
+
+    const scrollWhenReady = () => {
+      const target = document.getElementById(targetId);
+
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        setPendingScrollTarget(null);
+        return;
+      }
+
+      attempts += 1;
+      if (attempts < maxAttempts) {
+        window.setTimeout(scrollWhenReady, 80);
+      }
+    };
+
+    window.setTimeout(scrollWhenReady, 100);
+  }, [activePage, pendingScrollTarget]);
 
   const navigateTo = (page, targetId = null) => {
     const nextPath = pagePaths[page] ?? "/";
@@ -241,17 +260,19 @@ export default function CourseLandingSite() {
     setActivePage(page);
     setMenuOpen(false);
 
+    if (targetId) {
+      setPendingScrollTarget(targetId);
+    }
+
     if (currentPath !== nextUrl) {
       window.history.pushState({ page }, "", nextUrl);
     }
 
-    window.setTimeout(() => {
-      if (targetId) {
-        document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
-      } else {
+    if (!targetId) {
+      window.setTimeout(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    }, 80);
+      }, 80);
+    }
   };
 
   const handlePackageSelect = (packageId) => {
@@ -384,15 +405,14 @@ function Header({ activePage, menuOpen, setMenuOpen, imageErrors, setImageErrors
         </button>
 
         <div className="hidden items-center gap-3 text-sm text-zinc-300 md:flex">
-          <NavButton active={activePage === "about"} onClick={() => navigateTo("about")}>Про мене</NavButton>
           <NavButton active={activePage === "program"} onClick={() => navigateTo("program")}>Програма</NavButton>
-          {isLegalPage && <NavButton active={isLegalPage} onClick={() => navigateTo(activePage)}>Документи</NavButton>}
+          <NavButton active={activePage === "about"} onClick={() => navigateTo("about")}>Про мене</NavButton>
           <button
             type="button"
             onClick={() => navigateTo("program", "apply")}
             className="rounded-full bg-white px-5 py-2.5 font-semibold text-black transition hover:bg-zinc-200"
           >
-            Залишити заявку
+            Придбати
           </button>
         </div>
 
@@ -415,9 +435,9 @@ function Header({ activePage, menuOpen, setMenuOpen, imageErrors, setImageErrors
             className="overflow-hidden border-t border-white/10 bg-[#070707] md:hidden"
           >
             <div className="grid gap-1 px-5 py-4 text-sm text-zinc-300">
-              <MobileMenuButton onClick={() => navigateTo("about")}>Про мене</MobileMenuButton>
               <MobileMenuButton onClick={() => navigateTo("program")}>Програма</MobileMenuButton>
-              <MobileMenuButton onClick={() => navigateTo("program", "apply")}>Залишити заявку</MobileMenuButton>
+              <MobileMenuButton onClick={() => navigateTo("about")}>Про мене</MobileMenuButton>
+              <MobileMenuButton onClick={() => navigateTo("program", "apply")}>Придбати</MobileMenuButton>
               <div className="my-2 h-px bg-white/10" />
               <MobileMenuButton onClick={() => navigateTo("offer")}>Публічна оферта</MobileMenuButton>
               <MobileMenuButton onClick={() => navigateTo("refund")}>Політика повернення</MobileMenuButton>
@@ -466,14 +486,14 @@ function AboutPage({ imageErrors, setImageErrors, navigateTo }) {
           <div className="relative aspect-[4/5] overflow-hidden rounded-[1.5rem] bg-zinc-900">
             {!imageErrors.photo ? (
               <img
-                src={PHOTO_SRC}
+                src={ABOUT_PHOTO_SRC}
                 alt="Артем Косточка"
                 className="h-full w-full object-cover object-center"
                 onError={() => setImageErrors((value) => ({ ...value, photo: true }))}
               />
             ) : (
               <div className="grid h-full place-items-center bg-zinc-900 p-8 text-center">
-                <p className="text-zinc-500">Додайте фото у public/kostochka-photo.jpg</p>
+                <p className="text-zinc-500">Додайте фото у public/kostochka-photo-alternative.jpg</p>
               </div>
             )}
           </div>
@@ -517,7 +537,7 @@ function AboutPage({ imageErrors, setImageErrors, navigateTo }) {
               onClick={() => navigateTo("program", "apply")}
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-4 font-bold text-white transition hover:bg-white/10"
             >
-              Залишити заявку
+              Придбати
             </button>
           </div>
         </motion.div>
@@ -577,9 +597,7 @@ function ProgramPage({
             </a>
           </div>
 
-          <p className="mt-5 text-sm text-zinc-500">
-            Після оплати Артем отримає заявку та надасть доступ у Telegram вручну протягом 24 годин.
-          </p>
+          
         </motion.div>
 
         <motion.div
@@ -646,10 +664,7 @@ function ProgramPage({
                       </div>
                     </div>
                   )}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-5">
-                    <p className="text-xs uppercase tracking-[0.24em] text-zinc-400">Мінікурс «ТІКТОК НА МІЛЬЙОН»</p>
-                    <p className="mt-2 text-2xl font-black leading-tight">Контент, який утримує увагу і приводить людей.</p>
-                  </div>
+                  
                 </div>
 
                 <div className="mt-5 grid grid-cols-3 gap-3 text-center">
@@ -799,10 +814,6 @@ function ProgramPage({
             );
           })}
         </div>
-
-        <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 text-sm leading-7 text-zinc-300">
-          Обраний тариф: <span className="font-bold text-white">{selectedPackage.name}</span>. Після оплати Артем отримає заявку та надасть доступ у Telegram вручну протягом 24 годин.
-        </div>
       </section>
 
       <section id="faq" className="mx-auto max-w-4xl px-5 py-20 lg:px-8">
@@ -839,7 +850,7 @@ function ProgramPage({
           <AfterPaymentStep number="01" title="Залишаєш дані" text="Обираєш тариф і заповнюєш коротку форму." />
           <AfterPaymentStep number="02" title="Оплачуєш" text="Переходиш до безпечної оплати через WayForPay." />
           <AfterPaymentStep number="03" title="Артем отримує заявку" text="Після підтвердження оплати заявка потрапляє до списку покупців." />
-          <AfterPaymentStep number="04" title="Отримуєш доступ" text="Артем вручну зв’язується у Telegram і надає доступ до курсу." />
+          <AfterPaymentStep number="04" title="Отримуєш доступ" text="Посилання з доступом до Telegram-каналу надсилається автоматично відповідно до тарифу." />
         </div>
 
         <div className="rounded-[2.2rem] border border-white/10 bg-white p-7 text-black md:p-10">
@@ -848,7 +859,7 @@ function ProgramPage({
               <p className="text-sm font-black uppercase tracking-[0.28em] text-zinc-500">Запис на курс</p>
               <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Залиш дані — і переходь до оплати.</h2>
               <p className="mt-5 max-w-2xl leading-8 text-zinc-700">
-                Після оплати Артем отримає заявку та вручну надасть доступ у Telegram відповідно до обраного тарифу протягом 24 годин.
+                Після оплати посилання з доступом до Telegram-каналу надішлеться автоматично відповідно до обраного тарифу.
               </p>
               <div className="mt-7 flex flex-wrap gap-3 text-sm text-zinc-600">
                 <Badge icon={<Icon name="clock" size={16} />} text="Доступ після оплати" />
@@ -1160,7 +1171,7 @@ function PaymentStatusPage({ type, title, text, actionLabel, onAction }) {
           </div>
           <div>
             <p className="font-black text-black">3. Доступ</p>
-            <p className="mt-1">Артем вручну додає покупця в Telegram.</p>
+            <p className="mt-1">Покупець отримує посилання з доступом відповідно до тарифу.</p>
           </div>
         </div>
         <button
@@ -1183,7 +1194,7 @@ function PaymentSuccessPage({ navigateTo }) {
     <PaymentStatusPage
       type="success"
       title="Оплату прийнято."
-      text="Ми отримали вашу заявку. Артем зв’яжеться з вами у Telegram і надасть доступ до курсу відповідно до обраного тарифу протягом 24 годин."
+      text="Ми отримали вашу заявку. посилання з доступом до Telegram-каналу буде надіслано автоматично відповідно до обраного тарифу."
       actionLabel="Повернутися до програми"
       onAction={() => navigateTo("program")}
     />
@@ -1232,7 +1243,7 @@ function MobileStickyCta({ navigateTo }) {
         onClick={() => navigateTo("program", "price")}
         className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-black text-black shadow-2xl shadow-black/40"
       >
-        Обрати тариф — від 1499 грн <Icon name="arrowRight" size={16} />
+        Придбати — від 1499 грн <Icon name="arrowRight" size={16} />
       </button>
     </div>
   );
@@ -1258,7 +1269,7 @@ function Footer({ imageErrors, setImageErrors, navigateTo }) {
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             <FooterButton onClick={() => navigateTo("about")}>Про мене</FooterButton>
             <FooterButton onClick={() => navigateTo("program")}>Програма</FooterButton>
-            <FooterButton onClick={() => navigateTo("program", "apply")}>Заявка</FooterButton>
+            <FooterButton onClick={() => navigateTo("program", "apply")}>Придбати</FooterButton>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 md:justify-end">
             <FooterButton onClick={() => navigateTo("offer")}>Оферта</FooterButton>
