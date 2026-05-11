@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 const LOGO_SRC = "/kostochka-logo.jpg";
 const PHOTO_SRC = "/kostochka-photo.jpg";
 const ABOUT_PHOTO_SRC = "/kostochka-photo-alternative.jpg";
+const INSTAGRAM_URL = "https://www.instagram.com/kosta4ka?igsh=cm90bmFqNG4yZ2hu";
+const TIKTOK_URL = "https://www.tiktok.com/@k0sta4ka?_r=1&_t=ZS-96Ezpf7Dq4b";
 
 const pagePaths = {
   about: "/",
@@ -167,10 +169,10 @@ const faqs = [
       "Ні. Курс підходить для локального бізнесу, експертів, власників Telegram-каналів, початківців у контенті та людей, які хочуть просувати себе або свої послуги через Instagram, TikTok і Telegram.",
   },
   {
-  question: "Чи потрібна велика аудиторія на старті?",
-  answer:
-    "Ні. Курс побудований так, щоб ти міг стартувати навіть із маленькою аудиторією: зрозуміти свою подачу, створити систему контенту й поступово перетворювати увагу в довіру та заявки.",
-},
+    question: "Чи потрібна велика аудиторія на старті?",
+    answer:
+      "Ні. Курс побудований так, щоб ти міг стартувати навіть із маленькою аудиторією: зрозуміти свою подачу, створити систему контенту й поступово перетворювати увагу в довіру та заявки.",
+  },
   {
     question: "Скільки потрібно часу на навчання?",
     answer:
@@ -388,8 +390,6 @@ function PageRenderer({ activePage, sharedProps }) {
 }
 
 function Header({ activePage, menuOpen, setMenuOpen, imageErrors, setImageErrors, navigateTo }) {
-  const isLegalPage = ["offer", "refund", "privacy", "contacts"].includes(activePage);
-
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070707]/88 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
@@ -644,7 +644,26 @@ function ProgramPage({
                     <p className="text-xs text-zinc-500">creator · content strategy</p>
                   </div>
                 </div>
-                <Icon name="instagram" size={21} className="text-zinc-400" />
+                <div className="flex items-center gap-2 text-zinc-400">
+                  <a
+                    href={TIKTOK_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="TikTok Артема Косточки"
+                    className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/[0.04] transition hover:bg-white/10 hover:text-white"
+                  >
+                    <Icon name="tiktok" size={18} />
+                  </a>
+                  <a
+                    href={INSTAGRAM_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Instagram Артема Косточки"
+                    className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/[0.04] transition hover:bg-white/10 hover:text-white"
+                  >
+                    <Icon name="instagram" size={18} />
+                  </a>
+                </div>
               </div>
 
               <div className="p-5">
@@ -698,13 +717,6 @@ function ProgramPage({
       </section>
 
       <section id="program" className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
-        <div className="mb-10 max-w-3xl">
-          <p className="text-sm font-bold uppercase tracking-[0.28em] text-zinc-500">Програма курсу</p>
-          <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">11 кроків до твого результату. Без води.</h2>
-          <p className="mt-5 leading-8 text-zinc-300">
-            На старті є вступний урок, а далі — 11 практичних модулів із домашніми завданнями. Кожен модуль побудований навколо практики: подивився урок, виконав завдання, застосував на своєму контенті.
-          </p>
-        </div>
 
         <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-4 md:p-6 lg:p-8">
           <div className="mb-6 flex flex-col gap-2 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between">
@@ -1194,7 +1206,7 @@ function PaymentSuccessPage({ navigateTo }) {
     <PaymentStatusPage
       type="success"
       title="Оплату прийнято."
-      text="Ми отримали вашу заявку. посилання з доступом до Telegram-каналу буде надіслано автоматично відповідно до обраного тарифу."
+      text="Ми отримали вашу заявку. Посилання з доступом до Telegram-каналу буде надіслано автоматично відповідно до обраного тарифу."
       actionLabel="Повернутися до програми"
       onAction={() => navigateTo("program")}
     />
@@ -1265,18 +1277,11 @@ function Footer({ imageErrors, setImageErrors, navigateTo }) {
           </div>
         </div>
 
-        <div className="grid gap-3 md:justify-items-end">
-          <div className="flex flex-wrap gap-x-5 gap-y-2">
-            <FooterButton onClick={() => navigateTo("about")}>Про мене</FooterButton>
-            <FooterButton onClick={() => navigateTo("program")}>Програма</FooterButton>
-            <FooterButton onClick={() => navigateTo("program", "apply")}>Придбати</FooterButton>
-          </div>
-          <div className="flex flex-wrap gap-x-5 gap-y-2 md:justify-end">
-            <FooterButton onClick={() => navigateTo("offer")}>Оферта</FooterButton>
-            <FooterButton onClick={() => navigateTo("refund")}>Повернення</FooterButton>
-            <FooterButton onClick={() => navigateTo("privacy")}>Конфіденційність</FooterButton>
-            <FooterButton onClick={() => navigateTo("contacts")}>Контакти</FooterButton>
-          </div>
+        <div className="flex flex-wrap gap-x-5 gap-y-2 md:justify-end">
+          <FooterButton onClick={() => navigateTo("offer")}>Оферта</FooterButton>
+          <FooterButton onClick={() => navigateTo("refund")}>Повернення</FooterButton>
+          <FooterButton onClick={() => navigateTo("privacy")}>Конфіденційність</FooterButton>
+          <FooterButton onClick={() => navigateTo("contacts")}>Контакти</FooterButton>
         </div>
       </div>
     </footer>
@@ -1424,6 +1429,12 @@ function Icon({ name, size = 20, className = "" }) {
         <rect width="18" height="18" x="3" y="3" rx="5" />
         <circle cx="12" cy="12" r="4" />
         <path d="M17.5 6.5h.01" />
+      </svg>
+    ),
+    tiktok: (
+      <svg {...commonProps}>
+        <path d="M14 3v10.6a4.4 4.4 0 1 1-4.4-4.4" />
+        <path d="M14 6.5c1.4 2 3.3 3 6 3" />
       </svg>
     ),
     menu: (
