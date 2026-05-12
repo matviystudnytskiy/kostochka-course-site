@@ -8,7 +8,7 @@ const INSTAGRAM_URL = "https://www.instagram.com/kosta4ka?igsh=cm90bmFqNG4yZ2hu"
 const TIKTOK_URL = "https://www.tiktok.com/@k0sta4ka?_r=1&_t=ZS-96Ezpf7Dq4b";
 
 const pagePaths = {
-  about: "/",
+  about: "/about",
   program: "/program",
   offer: "/offer",
   refund: "/refund",
@@ -19,8 +19,8 @@ const pagePaths = {
 };
 
 const pageTitles = {
-  about: "КУРС ТІКТОК НА МІЛЬЙОН",
-  program: "Програма - Артем Косточка",
+  about: "Про мене - Артем Косточка",
+  program: "КУРС ТІКТОК НА МІЛЬЙОН",
   offer: "Публічна оферта - Артем Косточка",
   refund: "Політика повернення - Артем Косточка",
   privacy: "Політика конфіденційності - Артем Косточка",
@@ -30,11 +30,12 @@ const pageTitles = {
 };
 
 function getPageFromPath() {
-  if (typeof window === "undefined") return "about";
+  if (typeof window === "undefined") return "program";
 
   const path = window.location.pathname.replace(/\/$/, "") || "/";
 
-  if (path === "/program") return "program";
+  if (path === "/" || path === "/program") return "program";
+  if (path === "/about") return "about";
   if (path === "/offer") return "offer";
   if (path === "/refund") return "refund";
   if (path === "/privacy") return "privacy";
@@ -42,7 +43,7 @@ function getPageFromPath() {
   if (path === "/payment-success") return "paymentSuccess";
   if (path === "/payment-declined") return "paymentDeclined";
 
-  return "about";
+  return "program";
 }
 
 const modules = [
@@ -393,7 +394,8 @@ function Header({ activePage, menuOpen, setMenuOpen, imageErrors, setImageErrors
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#070707]/88 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
-        <button type="button" onClick={() => navigateTo("about")} className="flex items-center gap-3 text-left">
+        <button type="button" onClick={() => navigateTo("program")}
+          className="flex items-center gap-3 text-left">
           <LogoMark
             hasError={imageErrors.logo}
             onError={() => setImageErrors((value) => ({ ...value, logo: true }))}
