@@ -207,7 +207,7 @@ const seller = {
 export default function CourseLandingSite() {
   const [activePage, setActivePage] = useState(() => getPageFromPath());
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activePackage, setActivePackage] = useState("pro");
+  const [activePackage, setActivePackage] = useState("base");
   const [openFaq, setOpenFaq] = useState(0);
   const [imageErrors, setImageErrors] = useState({ logo: false, photo: false });
   const [formStatus, setFormStatus] = useState({ loading: false, error: "" });
@@ -771,9 +771,6 @@ function ProgramPage({
             <p className="text-sm font-bold uppercase tracking-[0.28em] text-zinc-500">Тарифи</p>
             <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">Обери свій формат навчання.</h2>
           </div>
-          <p className="max-w-xl leading-8 text-zinc-300">
-            БАЗА — самостійне проходження. PRO — підтримка, перевірка домашніх завдань, чат учасників і додаткові розбори.
-          </p>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-2">
@@ -793,36 +790,51 @@ function ProgramPage({
                     : "border-white/10 bg-white/[0.04] text-white hover:border-white/25 hover:bg-white/[0.07]"
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-black uppercase tracking-[0.22em] text-zinc-500">{pack.label}</p>
-                    <p className="mt-2 text-4xl font-black">{pack.name}</p>
-                    <p className={`mt-3 text-sm leading-6 ${isActive ? "text-zinc-600" : "text-zinc-400"}`}>{pack.subtitle}</p>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end gap-2">
-                    {pack.recommended && (
-                      <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${isActive ? "bg-black text-white" : "bg-white text-black"}`}>
-                        рекомендовано
-                      </span>
-                    )}
-                    {isActive && (
-                      <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
-                        обрано
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <p className="mt-7 text-5xl font-black tracking-tight">{pack.price}</p>
-                <div className="mt-6 grid gap-3">
-                  {pack.features.map((feature) => (
-                    <div key={feature} className={`flex gap-3 text-sm leading-6 ${isActive ? "text-zinc-700" : "text-zinc-300"}`}>
-                      <Icon name="check" size={17} className="mt-1 shrink-0" />
-                      {feature}
+                <div className="flex h-full flex-col">
+                  <div className="flex min-h-[2rem] items-start justify-between gap-4">
+                    <p className="text-sm font-black uppercase tracking-[0.22em] text-zinc-500">
+                      {pack.label}
+                    </p>
+
+                    <div className="flex shrink-0 items-center gap-2">
+                      {pack.recommended && (
+                        <span className={`rounded-full px-3 py-1 text-xs font-black uppercase tracking-wide ${isActive ? "bg-black text-white" : "bg-white text-black"}`}>
+                          рекомендовано
+                        </span>
+                      )}
+
+                      {isActive && (
+                        <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
+                          обрано
+                        </span>
+                      )}
                     </div>
-                  ))}
-                </div>
-                <div className={`mt-7 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black ${isActive ? "bg-black text-white" : "bg-white text-black"}`}>
-                  {pack.button} <Icon name="arrowRight" size={16} />
+                  </div>
+
+                  <div className="mt-5">
+                    <p className="text-4xl font-black">{pack.name}</p>
+                    <p className={`mt-3 min-h-[3rem] text-sm leading-6 ${isActive ? "text-zinc-600" : "text-zinc-400"}`}>
+                      {pack.subtitle}
+                    </p>
+                  </div>
+
+                  <p className="mt-7 text-5xl font-black tracking-tight">{pack.price}</p>
+
+                  <div className="mt-6 grid gap-3">
+                    {pack.features.map((feature) => (
+                      <div
+                        key={feature}
+                        className={`flex gap-3 text-sm leading-6 ${isActive ? "text-zinc-700" : "text-zinc-300"}`}
+                      >
+                        <Icon name="check" size={17} className="mt-1 shrink-0" />
+                        {feature}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className={`mt-7 inline-flex w-fit items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black ${isActive ? "bg-black text-white" : "bg-white text-black"}`}>
+                    {pack.button} <Icon name="arrowRight" size={16} />
+                  </div>
                 </div>
               </button>
             );
